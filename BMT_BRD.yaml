@@ -1,0 +1,15 @@
+thruster_interface:  # coefficients necessary for runing the 5DOF controller
+  update_rate: 100  # Update rate of the control output
+  max_command: 100  # Thruster saturation point in command values  
+  allocation_matrix:  # Based on DOI: 978-1-4799-0997-1/13/$31.00 by Miskovic et al.
+    rows: 5
+    columns: 5
+    allocation_matrix: 
+    - [0, 1, 1, 0, 0]
+    - [1, 0, 0, 0, 0]
+    - [0, 0, 0, 1, 1]
+    - [0, 0, 0, -0.7, 0.7]
+    - [0, 0.815, -0.815, 0, 0]
+  linearisation:  # Based on Fossen's simplified model: tau=b*|force|*force
+    positive: 2.6165E-4
+    negative: 0.664E-4
