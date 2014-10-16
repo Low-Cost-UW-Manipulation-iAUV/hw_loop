@@ -131,7 +131,7 @@ namespace UWEsub {
         thruster_driver_command_publisher_.reset(new realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>(nh_, "motorVal", 1) );
 
         /// Get the required variables from the parameter server and set standard values if not available
-        double loop_hz_ = 0;
+        loop_hz_ = 0;
         if (!nh_.getParam("/thruster_interface/update_rate", loop_hz_)) {
 
             ROS_ERROR("DOF_5_hw_loop: Could not find update rate, assuming 50. \n");
@@ -154,16 +154,35 @@ namespace UWEsub {
     bool phoenix_hw_interface::panic( std_srvs::Empty::Request& request,  std_srvs::Empty::Response& response) {
         /// Stopping the ros::timer
         timer_update.stop();
+        for (int x = 0; x < write_command.size(); x++) {
+            write_command[x] = 0;
+        }
 
-        cmd[0] = 0;
-        cmd[1] = 0;
-        cmd[2] = 0;
-        cmd[3] = 0;
-        cmd[4] = 0;
-        cmd[5] = 0;
-        write();
+        while ( write() != EXIT_SUCCESS ) {
+            usleep(100);
+            for (int x = 0; x < write_command.size(); x++) {
+                write_command[x] = 0;
+            }
+            ROS_ERROR("DOF_5_hw_loop: still trying to stop the thrusters");
+        }
+
         ROS_ERROR("DOF_5_hw_loop: You have panic stopped the controller. All thrusters have stopped and the hardware loop needs restarting");
+        // Just to be safe change to the panic_loop which just sends 0s out.
+        ros::Duration update_freq = ros::Duration(1.0/loop_hz_);
+        timer_update = nh_.createTimer(update_freq, &phoenix_hw_interface::panic_loop, this);
+
     }
+
+    /** panic_loop(): once a panic stop has been registered this loop will replace update()
+            It will continously send a value of 0 to the thrusters.
+    */
+    void phoenix_hw_interface::panic_loop(const ros::TimerEvent& event) {
+        for (int x = 0; x < write_command.size(); x++) {
+            write_command[x] = 0;
+        }
+        write();
+    }
+
 
     /** sub_callback_...() listens to the corresponding DOF's feedback signal
     The signal is stored unaltered.
@@ -225,6 +244,7 @@ namespace UWEsub {
         // send the message in a realtime safe fashion
        if ( thruster_driver_command_publisher_ && thruster_driver_command_publisher_->trylock() ) {
             // resize the array
+            thruster_driver_command_publisher_->msg_.data.clear();
             thruster_driver_command_publisher_->msg_.data.resize(write_command.size(),0);
             // fill the message with the commands to be written
             for (int x = 0; x < write_command.size(); x++) {
@@ -362,6 +382,10 @@ namespace UWEsub {
             --> negative: command =  -1* sqrt(force/b_b)
     */
     int phoenix_hw_interface::thrust_to_command(void) {
+        // clear the thrust vector. THe allocation_matrix x axis size corresponds to the number of thrusters.
+        write_command.clear();
+        write_command.resize(allocation_matrix.size1(),0);
+
         for (int x = 0; x < write_command.size(); x++) {
             // handle the positive force
             if (thrust[x] > 0) {
@@ -372,6 +396,7 @@ namespace UWEsub {
                 write_command[x] = sqrt(thrust[x]/negative_linearisation) * -1;
             }
         }
+
     }
 
     /** thruster_allocation(): turns the body frame force demand into commands for individual thrusters
@@ -380,6 +405,10 @@ namespace UWEsub {
         ublas::vector<double> temp_cmd;
         temp_cmd.clear();
         temp_cmd.resize(6, false);
+        
+        // clear the thrust vector. THe allocation_matrix x axis size corresponds to the number of thrusters.
+        thrust.clear();
+        thrust.resize(allocation_matrix.size1(),0);
 
         // build a temporary vector to allow for boost::ublas matrix calculations below:
         for (int x = 0; x < 6; x++) {

@@ -63,7 +63,8 @@ namespace UWEsub {
 
         /// DOF update functions
         void update(const ros::TimerEvent&);
-
+        void panic_loop(const ros::TimerEvent&);
+        double loop_hz_;
         /// DOF update timers
         ros::Timer timer_update;
 
