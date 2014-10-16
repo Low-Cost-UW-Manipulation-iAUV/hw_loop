@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
 	message_generation
 	controller_manager
 	hardware_interface )
-
+find_package(Boost REQUIRED COMPONENTS thread system)
 
 ## Declare a catkin package
 catkin_package(
@@ -21,8 +21,8 @@ catkin_package(
 	 )
 
 ## Build talker and listener
-include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} SYSTEM ${Boost_INCLUDE_DIR} )
 
 add_executable(hw_loop src/hw_loop.cpp )
-target_link_libraries(hw_loop ${catkin_LIBRARIES}  ${roscpp_LIBRARIES} )
+target_link_libraries(hw_loop ${catkin_LIBRARIES}  ${roscpp_LIBRARIES} ${Boost_LIBRARIES} )
 add_dependencies(hw_loop std_msgs_generate_messages_cpp)
