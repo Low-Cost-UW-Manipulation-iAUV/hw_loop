@@ -29,12 +29,18 @@
 
 namespace ublas = boost::numeric::ublas;
 
+// Sigint handler
+void set_terminate_flag(int);
+
 namespace UWEsub {
     class phoenix_hw_interface : public hardware_interface::RobotHW {
     public:
         phoenix_hw_interface();
         ~phoenix_hw_interface();
 
+        void terminate(void);
+        static bool terminate_flag;
+        static bool safe;
         bool are_thrusters_scaled_down(void);
         bool panic( std_srvs::Empty::Request& request,  std_srvs::Empty::Response& response);
 
@@ -105,7 +111,6 @@ namespace UWEsub {
         //ros::Duration control_period_;
 
         // double state_x_position, state_x_velocity;
-
     };
 }
 

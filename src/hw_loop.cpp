@@ -23,9 +23,11 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
+
 #include "ros/ros.h"
 #include <sstream>
 #include <stdio.h>
+#include <signal.h>
 
 #include "hw_loop/hw_loop.hpp"
 
@@ -51,6 +53,8 @@ namespace UWEsub {
         pos[5] = 0.0;
 
         sequence = 0;
+        terminate_flag = false;
+        safe = false;
 
         /// get the parameters
         get_allocation_matrix();
@@ -144,9 +148,32 @@ namespace UWEsub {
         timer_update = nh_.createTimer(update_freq, &phoenix_hw_interface::update, this);
     }
 
-    /** Destructor
+    /** Destructor: 
     */
     phoenix_hw_interface::~phoenix_hw_interface() {}
+
+
+    /**terminate(): Will try to stop the thrusters before shutting down
+                    Should send at lreast 3 messages with 0 commands before we shutdown
+    */
+    void phoenix_hw_interface::terminate(void) {
+        timer_update.stop();
+        for (int x = 0; x < write_command.size(); x++) {
+            write_command[x] = 0;
+        }
+        write();
+        write();
+
+        while ( write() != EXIT_SUCCESS ) {
+            usleep(100);
+            for (int x = 0; x < write_command.size(); x++) {
+                write_command[x] = 0;
+            }
+            ROS_ERROR("DOF_5_hw_loop: still trying to stop the thrusters, then shutting down");
+        } 
+        ROS_ERROR("DOF_5_hw_loop: shutting down, set the thrusters to 0"); 
+        safe = true;
+    }
 
     /** panic(): the service call that will stop all thrusters
             usage: rosservice call stop
@@ -177,6 +204,7 @@ namespace UWEsub {
             It will continously send a value of 0 to the thrusters.
     */
     void phoenix_hw_interface::panic_loop(const ros::TimerEvent& event) {
+
         for (int x = 0; x < write_command.size(); x++) {
             write_command[x] = 0;
         }
@@ -215,23 +243,27 @@ namespace UWEsub {
     /** Update():  the real action happens here: run the controllers and update the actuator output
     */
     void phoenix_hw_interface::update(const ros::TimerEvent& event) {
-        /// Update the time since the last update
-        ros::Duration elapsed_time_ = ros::Duration(event.current_real - event.last_real);
+        if(terminate_flag == true){
+            terminate();
+        } else {
+            /// Update the time since the last update
+            ros::Duration elapsed_time_ = ros::Duration(event.current_real - event.last_real);
 
-        /// Let the controller do its work
-        controller_manager_->update(ros::Time::now(), elapsed_time_);
+            /// Let the controller do its work
+            controller_manager_->update(ros::Time::now(), elapsed_time_);
 
-        // find invidivdual thruster force demands from body frame force demands
-        thruster_allocation();
+            // find invidivdual thruster force demands from body frame force demands
+            thruster_allocation();
 
-        // calculate the thruster command from the force
-        thrust_to_command();
+            // calculate the thruster command from the force
+            thrust_to_command();
 
-        // scale forces down if thrusters are saturated
-        scale_commands();
+            // scale forces down if thrusters are saturated
+            scale_commands();
 
-        // Write the new command to the motor drivers
-        write();
+            // Write the new command to the motor drivers
+            write();
+        }
     }
 
 
@@ -421,6 +453,21 @@ namespace UWEsub {
 }  // namespace
 
 
+bool UWEsub::phoenix_hw_interface::terminate_flag = 0;
+bool UWEsub::phoenix_hw_interface::safe = 0;
+
+/** set_terminate_flag(): sets the static terminate_flag inside the phoenix_hw_interface.
+                            The set flag causes the object to initiate a safe shutdown which sends
+                            0 commands to the thrusters.
+*/
+void set_terminate_flag(int sig) {
+    UWEsub::phoenix_hw_interface::terminate_flag = true;
+    while(UWEsub::phoenix_hw_interface::safe == false){
+        usleep(100);
+    }
+    ros::shutdown();
+}
+
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "DOF_5_hw_loop");
@@ -428,8 +475,14 @@ int main(int argc, char **argv) {
     /// An Async spinner creates another thread which will handle the event of this node being executed.
     ros::AsyncSpinner spinner(7);
     spinner.start();
+
+    // create the instance of the class
     UWEsub::phoenix_hw_interface hw_loop;
+
+    // register the 
+    signal(SIGINT, set_terminate_flag);
     ros::spin();
+
 
     ROS_INFO("5_DOF_hw_loop: Shutting down hardware interface");
 }
