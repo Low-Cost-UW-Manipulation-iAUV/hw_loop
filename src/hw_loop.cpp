@@ -440,7 +440,7 @@ namespace UWEsub {
 
                 // handle negative force
             } else if (thrust[x] < 0) {
-                write_command[x] = sqrt(thrust[x]/negative_linearisation) * -1;
+                write_command[x] = sqrt(abs(thrust[x])/negative_linearisation) * -1;
             }
         }
 

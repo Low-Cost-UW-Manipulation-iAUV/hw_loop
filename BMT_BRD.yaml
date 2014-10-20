@@ -42,9 +42,9 @@ Phoenix_Controller:
 #    head_2_joint:
 #      goal: 0.01                     # Not enforced if unspecified
   gains: # Required because we're controlling an effort interface
-    x: {p: 100,  d: 1, i: 1, i_clamp: 1}
-    y: {p: 100,  d: 1, i: 1, i_clamp: 1}
-    z: {p: 100,  d: 1, i: 1, i_clamp: 1}
-    yaw: {p: 100,  d: 1, i: 1, i_clamp: 1}
-    pitch: {p: 100,  d: 1, i: 1, i_clamp: 1}
-    roll: {p: 100,  d: 1, i: 1, i_clamp: 1}
+    x:      {p: 100,  d: 0, i: 0, i_clamp: 1}
+    y:      {p: 100,  d: 0, i: 0, i_clamp: 1}
+    z:      {p: 100,  d: 0, i: 0, i_clamp: 1}
+    yaw:    {p: 100,  d: 0, i: 0, i_clamp: 1}
+    pitch:  {p: 100,  d: 0, i: 0, i_clamp: 1}
+    roll:   {p: 100,  d: 0, i: 0, i_clamp: 1}
