@@ -8,5 +8,6 @@ rsync -avzh *.xml 								BBB_BRLWIFI:/home/ubuntu/uwesub_catkin_workspace/src/h
 rsync -avzh *.launch	 						BBB_BRLWIFI:/home/ubuntu/uwesub_catkin_workspace/src/hw_loop/
 rsync -avzh *.yaml		 						BBB_BRLWIFI:/home/ubuntu/uwesub_catkin_workspace/src/hw_loop/
 rsync -avzh *.md								BBB_BRLWIFI:/home/ubuntu/uwesub_catkin_workspace/src/hw_loop/
+rsync -avzh ./urdf/*.urdf						BBB_BRLWIFI:/home/ubuntu/uwesub_catkin_workspace/src/hw_loop/urdf/
 
 echo "All done, Good Success!"

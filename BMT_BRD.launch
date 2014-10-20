@@ -1,0 +1,6 @@
+<launch>
+  <!-- urdf xml robot description loaded on the Parameter Server-->
+	<param name="robot_description" textfile="$(find hw_loop)/urdf/BMT_BRD.urdf" />
+	<rosparam command="load" file="$(find hw_loop)/BMT_BRD.yaml" />
+	<node name="BMT_BRD_hw_loop" pkg="hw_loop" type="hw_loop"/>
+</launch>

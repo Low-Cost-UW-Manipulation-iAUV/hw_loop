@@ -8,5 +8,6 @@ rsync -avzh *.xml 								BBB_local:/home/ubuntu/uwesub_catkin_workspace/src/hw_
 rsync -avzh *.launch	 						BBB_local:/home/ubuntu/uwesub_catkin_workspace/src/hw_loop/
 rsync -avzh *.yaml		 						BBB_local:/home/ubuntu/uwesub_catkin_workspace/src/hw_loop/
 rsync -avzh *.md								BBB_local:/home/ubuntu/uwesub_catkin_workspace/src/hw_loop/
+rsync -avzh ./urdf/*.urdf						BBB_local:/home/ubuntu/uwesub_catkin_workspace/src/hw_loop/urdf/
 
 echo "All done, Good Success!"

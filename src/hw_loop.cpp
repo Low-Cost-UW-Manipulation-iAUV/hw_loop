@@ -52,6 +52,21 @@ namespace UWEsub {
         pos[4] = 0.0;
         pos[5] = 0.0;
 
+        vel[0] = 0.0;
+        vel[1] = 0.0;
+        vel[2] = 0.0;
+        vel[3] = 0.0;
+        vel[4] = 0.0;
+        vel[5] = 0.0;
+
+        eff[0] = 0.0;        
+        eff[1] = 0.0;        
+        eff[2] = 0.0;        
+        eff[3] = 0.0;        
+        eff[4] = 0.0;        
+        eff[5] = 0.0;        
+
+
         sequence = 0;
         terminate_flag = false;
         safe = false;
@@ -93,7 +108,7 @@ namespace UWEsub {
 
 
 
-        /// connect and register the joint position interface for the 6 potentially controlled DOF
+        /// connect and register the joint effort interface for the 6 potentially controlled DOF
         hardware_interface::JointHandle pos_handle_x(joint_state_interface.getHandle("x"), &cmd[0]);
         jnt_eff_interface.registerHandle(pos_handle_x);
 
@@ -473,7 +488,7 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "DOF_5_hw_loop");
     ros::NodeHandle nh;
     /// An Async spinner creates another thread which will handle the event of this node being executed.
-    ros::AsyncSpinner spinner(7);
+    ros::AsyncSpinner spinner(2);
     spinner.start();
 
     // create the instance of the class

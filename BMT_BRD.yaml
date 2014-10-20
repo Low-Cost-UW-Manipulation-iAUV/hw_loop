@@ -13,3 +13,38 @@ thruster_interface:  # coefficients necessary for runing the 5DOF controller
   linearisation:  # Based on Fossen's simplified model: tau=b*|force|*force
     positive: 1
     negative: 1
+  joint_limits:  # How do we ensure that the thrusters dont switch from -100 to +100 directly? 
+    x:
+      has_position_limits: false
+      has_velocity_limits: false
+      has_acceleration_limits: false
+      has_jerk_limits: true
+      max_jerk: 100.0
+################################################################################################
+Phoenix_Controller:
+  state_publish_rate:  25            # Override default
+  action_monitor_rate: 30            # Override default
+  stop_trajectory_duration: 0        # Override default
+  type: "effort_controllers/JointTrajectoryController"
+  joints:
+    - x
+    - y
+    - z
+    - yaw
+    - pitch
+    - roll
+  constraints:
+    goal_time: 0.5                   # Override default
+    stopped_velocity_tolerance: 0.02 # Override default
+#    head_1_joint:
+#      trajectory: 0.05               # Not enforced if unspecified
+#      goal: 0.02                     # Not enforced if unspecified
+#    head_2_joint:
+#      goal: 0.01                     # Not enforced if unspecified
+  gains: # Required because we're controlling an effort interface
+    x: {p: 100,  d: 1, i: 1, i_clamp: 1}
+    y: {p: 100,  d: 1, i: 1, i_clamp: 1}
+    z: {p: 100,  d: 1, i: 1, i_clamp: 1}
+    yaw: {p: 100,  d: 1, i: 1, i_clamp: 1}
+    pitch: {p: 100,  d: 1, i: 1, i_clamp: 1}
+    roll: {p: 100,  d: 1, i: 1, i_clamp: 1}
