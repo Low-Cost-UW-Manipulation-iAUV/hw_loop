@@ -21,7 +21,7 @@ thruster_interface:  # coefficients necessary for runing the 5DOF controller
       has_jerk_limits: true
       max_jerk: 100.0
 ################################################################################################
-Phoenix_Controller:
+Controller:
   state_publish_rate:  25            # Override default
   action_monitor_rate: 30            # Override default
   stop_trajectory_duration: 0        # Override default
