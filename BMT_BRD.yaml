@@ -14,7 +14,7 @@ thruster_interface:  # coefficients necessary for runing the 5DOF controller
     positive: 1
     negative: 1
   joint_limits:  # How do we ensure that the thrusters dont switch from -100 to +100 directly? 
-    x:
+    x:  # Check this with Adolfo again.
       has_position_limits: false
       has_velocity_limits: false
       has_acceleration_limits: false
@@ -48,3 +48,5 @@ Controller:
     yaw:    {p: 100,  d: 0, i: 0, i_clamp: 1}
     pitch:  {p: 100,  d: 0, i: 0, i_clamp: 1}
     roll:   {p: 100,  d: 0, i: 0, i_clamp: 1}
+
+
