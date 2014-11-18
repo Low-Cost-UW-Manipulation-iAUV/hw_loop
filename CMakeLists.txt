@@ -8,7 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
 	std_msgs
 	message_generation
 	controller_manager
-	hardware_interface )
+	hardware_interface
+	tf )
 find_package(Boost REQUIRED COMPONENTS thread system)
 
 ## Declare a catkin package
@@ -17,6 +18,7 @@ catkin_package(
 	 roscpp
 	 controller_manager
 	 hardware_interface
+	 tf
 	 INCLUDE_DIRS
 	 )
 

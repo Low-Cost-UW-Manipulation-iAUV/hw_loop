@@ -28,6 +28,7 @@
 #include <sstream>
 #include <stdio.h>
 #include <signal.h>
+#include <tf/transform_datatypes.h>
 
 #include "hw_loop/hw_loop.hpp"
 
@@ -132,15 +133,7 @@ namespace UWEsub {
 
 
         /// Subscribe to the Feedback Signal
-        sub_x = nh_.subscribe<geometry_msgs::Vector3>("feedback/x",1, &phoenix_hw_interface::sub_callback_x, this);
-        sub_y = nh_.subscribe<geometry_msgs::Vector3>("feedback/y",1, &phoenix_hw_interface::sub_callback_y, this);
-        sub_z = nh_.subscribe<geometry_msgs::Vector3>("feedback/z",1, &phoenix_hw_interface::sub_callback_z, this);
-        sub_yaw = nh_.subscribe<geometry_msgs::Vector3>("feedback/yaw",1, &phoenix_hw_interface::sub_callback_yaw, this);
-        sub_pitch = nh_.subscribe<geometry_msgs::Vector3>("feedback/pitch",1, &phoenix_hw_interface::sub_callback_pitch, this);
-        sub_roll = nh_.subscribe<geometry_msgs::Vector3>("feedback/roll",1, &phoenix_hw_interface::sub_callback_roll, this);
-
-
-
+        feedback_fused = nh_.subscribe<nav_msgs::Odometry>("odometry/filtered", 1, &phoenix_hw_interface::sub_callback, this);
 
         ///Initialise the controller manager
         ROS_INFO("DOF_5_hw_loop: Loading the controller manager");
@@ -230,28 +223,16 @@ namespace UWEsub {
     /** sub_callback_...() listens to the corresponding DOF's feedback signal
     The signal is stored unaltered.
     */
-    void phoenix_hw_interface::sub_callback_x(const geometry_msgs::Vector3::ConstPtr& message) {
-        pos[0] = message->x;
-    }
+    void phoenix_hw_interface::sub_callback(const nav_msgs::Odometry::ConstPtr& message) {
+        pos[SURGE] = message->pose.pose.position.x;
+        pos[SWAY] = message->pose.pose.position.y;
+        pos[HEAVE] = message->pose.pose.position.z;  
+        
 
-    void phoenix_hw_interface::sub_callback_y(const geometry_msgs::Vector3::ConstPtr& message) {
-        pos[1] = message->x;
-    }
-
-    void phoenix_hw_interface::sub_callback_z(const geometry_msgs::Vector3::ConstPtr& message) {
-        pos[2] = message->x;
-    }
-
-    void phoenix_hw_interface::sub_callback_yaw(const geometry_msgs::Vector3::ConstPtr& message) {
-        pos[3] = message->x;
-    }
-
-    void phoenix_hw_interface::sub_callback_pitch(const geometry_msgs::Vector3::ConstPtr& message) {
-        pos[4] = message->x;
-    }
-
-    void phoenix_hw_interface::sub_callback_roll(const geometry_msgs::Vector3::ConstPtr& message) {
-        pos[5] = message->x;
+        // get the Quaternion into 
+        tf::Quaternion q(message->pose.pose.orientation.x, message->pose.pose.orientation.y, message->pose.pose.orientation.z, message->pose.pose.orientation.w);
+        tf::Matrix3x3 m(q);
+        m.getRPY(pos[ROLL], pos[YAW], pos[PITCH]);                      
     }
 
 

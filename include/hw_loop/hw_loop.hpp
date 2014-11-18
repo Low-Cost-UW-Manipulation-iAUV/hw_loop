@@ -15,7 +15,7 @@
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
 
-#include "geometry_msgs/Vector3.h"
+#include "nav_msgs/Odometry.h"
     
 #include "ros/ros.h"
 #include "std_msgs/Float32MultiArray.h"
@@ -26,6 +26,13 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>    
 #include <boost/numeric/ublas/io.hpp>
+
+#define SURGE 0
+#define SWAY 1
+#define HEAVE 2
+#define YAW 3
+#define PITCH 4
+#define ROLL 5
 
 namespace ublas = boost::numeric::ublas;
 
@@ -46,21 +53,11 @@ namespace UWEsub {
 
 
         /// DOF feedback subscriber callbacks
-        void sub_callback_x(const geometry_msgs::Vector3::ConstPtr&);
-        void sub_callback_y(const geometry_msgs::Vector3::ConstPtr&);
-        void sub_callback_z(const geometry_msgs::Vector3::ConstPtr&);
-        void sub_callback_yaw(const geometry_msgs::Vector3::ConstPtr&);
-        void sub_callback_pitch(const geometry_msgs::Vector3::ConstPtr&);
-        void sub_callback_roll(const geometry_msgs::Vector3::ConstPtr&);
+        void sub_callback(const nav_msgs::Odometry::ConstPtr& message);
 
     private:
         /// DOF feedback subscribers
-        ros::Subscriber sub_x;
-        ros::Subscriber sub_y;
-        ros::Subscriber sub_z;
-        ros::Subscriber sub_yaw;
-        ros::Subscriber sub_pitch;
-        ros::Subscriber sub_roll;
+        ros::Subscriber feedback_fused;
 
         /// virtual panic button
         ros::ServiceServer panic_stopper;
