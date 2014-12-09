@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	rospy
 	std_msgs
+	nav_msgs
 	message_generation
 	controller_manager
 	hardware_interface
