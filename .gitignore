@@ -5,6 +5,7 @@
 */bin/*
 *~
 .DS_Store
+
 controller_manager_msgs/src/controller_manager_msgs/msg/*
 controller_manager_msgs/src/controller_manager_msgs/srv/*
 controller_manager_msgs/src/controller_manager_msgs/__init__.py

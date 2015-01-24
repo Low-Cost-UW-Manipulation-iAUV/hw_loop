@@ -251,6 +251,8 @@ namespace UWEsub {
             // find invidivdual thruster force demands from body frame force demands
             thruster_allocation();
 
+            // Joint Limits go here I think...
+            
             // calculate the thruster command from the force
             thrust_to_command();
 
@@ -411,6 +413,13 @@ namespace UWEsub {
     */
     int phoenix_hw_interface::thrust_to_command(void) {
         // clear the thrust vector. THe allocation_matrix x axis size corresponds to the number of thrusters.
+        
+        /* START FIXME*/
+        ROS_ERROR("!! FIXME: make sure these can be changed for the different thrusters! THe back thruzster is different !!" );
+        ros::shutdown();
+        /* START FIXME*/
+
+
         write_command.clear();
         write_command.resize(allocation_matrix.size1(),0);
 
