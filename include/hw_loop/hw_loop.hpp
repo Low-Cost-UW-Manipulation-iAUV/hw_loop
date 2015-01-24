@@ -79,8 +79,8 @@ namespace UWEsub {
             bool thrusters_scaled_down;
         int thrust_to_command(void);
             int get_linearisation_parameter(void);
-            double positive_linearisation;
-            double negative_linearisation;
+            std::vector<double> positive_linearisation;
+            std::vector<double> negative_linearisation;
 
         int thruster_allocation(void);
             int get_allocation_matrix(void);

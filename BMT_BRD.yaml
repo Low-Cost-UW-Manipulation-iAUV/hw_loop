@@ -1,4 +1,4 @@
-thruster_interface:  # coefficients necessary for runing the 5DOF controller
+thruster_interface:  # parameters necessary for runing the hardware_loop
   update_rate: 20  # Update rate of the control output
   max_command: 100  # Thruster saturation point in command values  
   allocation_matrix:  # Based on DOI: 978-1-4799-0997-1/13/$31.00 by Miskovic et al.
@@ -11,8 +11,8 @@ thruster_interface:  # coefficients necessary for runing the 5DOF controller
     0.000000,0.000000,0.500000,-0.714286,0.000000,0.000000,
     0.000000,0.000000,0.500000,0.714286,0.000000,0.000000]
   linearisation:  # Based on Fossen's simplified model: tau=b*|force|*force
-    positive: 1
-    negative: 1
+    positive: [1, 1, 1, 1, 1]  # The values correspond to thruster 1->5
+    negative: [1, 1, 1, 1, 1]
   joint_limits:  # How do we ensure that the thrusters dont switch from -100 to +100 directly? 
     x:  # Check this with Adolfo again.
       has_position_limits: false
@@ -21,7 +21,7 @@ thruster_interface:  # coefficients necessary for runing the 5DOF controller
       has_jerk_limits: true
       max_jerk: 100.0
 ################################################################################################
-Controller:
+Controller:  # parameters for the actual controller
   state_publish_rate:  25            # Override default
   action_monitor_rate: 30            # Override default
   stop_trajectory_duration: 0        # Override default
