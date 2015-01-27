@@ -15,6 +15,12 @@
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
 
+// Joint Limits Includes
+#include <joint_limits_interface/joint_limits.h>
+#include <joint_limits_interface/joint_limits_urdf.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
+#include <joint_limits_interface/joint_limits_interface.h>
+
 #include "nav_msgs/Odometry.h"
     
 #include "ros/ros.h"
@@ -26,6 +32,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>    
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/operation.hpp>
 
 #define SURGE 0
 #define SWAY 1
@@ -35,7 +42,11 @@
 #define ROLL 5
 
 namespace ublas = boost::numeric::ublas;
-
+using namespace hardware_interface;
+using joint_limits_interface::JointLimits;
+using joint_limits_interface::SoftJointLimits;
+using joint_limits_interface::PositionJointSoftLimitsHandle;
+using joint_limits_interface::PositionJointSoftLimitsInterface;
 // Sigint handler
 void set_terminate_flag(int);
 
@@ -74,17 +85,17 @@ namespace UWEsub {
         /// Thruster linearisation, Allocation and scaling
 
         int scale_commands(void);
-            int get_maximum_command(void);
-            double max_command;
-            bool thrusters_scaled_down;
+        int get_maximum_command(void);
+        double max_command;
+        bool thrusters_scaled_down;
         int thrust_to_command(void);
-            int get_linearisation_parameter(void);
-            std::vector<double> positive_linearisation;
-            std::vector<double> negative_linearisation;
+        int get_linearisation_parameter(void);
+        std::vector<double> positive_linearisation;
+        std::vector<double> negative_linearisation;
 
         int thruster_allocation(void);
-            int get_allocation_matrix(void);
-            ublas::matrix<double> allocation_matrix;
+        int get_allocation_matrix(void);
+        ublas::matrix<double> allocation_matrix;
 
         ros::NodeHandle nh_;
         boost::scoped_ptr <realtime_tools::RealtimePublisher <std_msgs::Float32MultiArray> > thruster_driver_command_publisher_;
@@ -108,6 +119,15 @@ namespace UWEsub {
         //ros::Duration control_period_;
 
         // double state_x_position, state_x_velocity;
+
+        //Controller Limits:
+        boost::shared_ptr<urdf::Model> urdf;
+
+        std::vector<JointLimits> limits;
+        std::vector<SoftJointLimits> soft_limits;
+        int get_controller_limits(void);
+
+
     };
 }
 

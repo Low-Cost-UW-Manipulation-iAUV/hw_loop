@@ -13,26 +13,20 @@
 *///////////////////////////////////////////////////////////////////////
 
 
-#include <controller_manager/controller_manager.h>
-#include <hardware_interface/joint_command_interface.h>
-#include <hardware_interface/joint_state_interface.h>
-#include <hardware_interface/robot_hw.h>
-
-//#include <algorithm>
-#include <boost/numeric/ublas/operation.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
 
 #include "ros/ros.h"
-#include <sstream>
-#include <stdio.h>
 #include <signal.h>
 #include <tf/transform_datatypes.h>
-
+#include <urdf/model.h>
 #include "hw_loop/hw_loop.hpp"
 
 namespace ublas = boost::numeric::ublas;
+
+using namespace hardware_interface;
+using joint_limits_interface::JointLimits;
+using joint_limits_interface::SoftJointLimits;
+using joint_limits_interface::PositionJointSoftLimitsHandle;
+using joint_limits_interface::PositionJointSoftLimitsInterface;
 
 namespace UWEsub {
 
@@ -84,6 +78,9 @@ namespace UWEsub {
         } else {
             ROS_ERROR("DOF_5_hw_loop: Panic Button not functioning");
         }        
+
+        // Initialise the URDF file that holds all the limits and load more params from parameterserver
+        get_controller_limits();
 
         /// connect and register the joint state interface for the 6 DOF
         hardware_interface::JointStateHandle state_handle_x("x", &pos[0], &vel[0], &eff[0]);
@@ -159,6 +156,39 @@ namespace UWEsub {
     /** Destructor: 
     */
     phoenix_hw_interface::~phoenix_hw_interface() {}
+
+    int phoenix_hw_interface::get_controller_limits(void) {
+
+        // read the urdf from the parameter server
+        if (!urdf->initParam("/robot_description")){
+            ROS_ERROR("Failed to read the urdf from the parameter server");
+            return -1;
+        }
+        // Get the list of joints we want to limit
+        std::vector<std::string> temp_joints;
+        if (!nh_.getParam("/Controller/joints_with_limits", temp_joints)) {
+
+            ROS_ERROR("DOF_5_hw_loop: Could not find Controllers joints with limits \n");
+            return -1;
+        }
+
+        // Load all limits into:
+        limits.resize(11);
+        soft_limits.resize(11);
+
+        int x = 0;
+        for (std::vector<std::string>::iterator it = temp_joints.begin(); it != temp_joints.end(); ++it, x++) {
+            
+            // get the joint name from the param server BUT look up the data from the URDF FILE
+            boost::shared_ptr<const urdf::Joint> urdf_joint = urdf->getJoint(*it);
+            const bool urdf_limits_ok = getJointLimits(urdf_joint, limits.at(x));
+            const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits.at(x) );
+            
+            // Get the updates from the yaml file
+            const bool rosparam_limits_ok = getJointLimits(*it, nh_, limits.at(x));
+        }
+        
+    }
 
 
     /**terminate(): Will try to stop the thrusters before shutting down
@@ -248,10 +278,14 @@ namespace UWEsub {
             /// Let the controller do its work
             controller_manager_->update(ros::Time::now(), elapsed_time_);
 
+            // Limit the 5 DOFs that we control
+
+
             // find invidivdual thruster force demands from body frame force demands
             thruster_allocation();
 
-            // Joint Limits go here I think...
+            // Joint Limits go here
+
             
             // calculate the thruster command from the force
             thrust_to_command();

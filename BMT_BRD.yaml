@@ -16,10 +16,72 @@ thruster_interface:  # parameters necessary for runing the hardware_loop
   joint_limits:  # How do we ensure that the thrusters dont switch from -100 to +100 directly? 
     x:  # Check this with Adolfo again.
       has_position_limits: false
+      has_velocity_limits: true
+      max_velocity: 0.3
+      has_acceleration_limits: false
+      has_jerk_limits: false
+    y: 
+      has_position_limits: false
+      has_velocity_limits: true
+      max_velocity: 0.3
+      has_acceleration_limits: false
+      has_jerk_limits: false
+    z:
+      has_position_limits: false
+      has_velocity_limits: true
+      max_velocity: 0.3
+      has_acceleration_limits: false
+      has_jerk_limits: false
+    yaw:
+      has_position_limits: false
+      has_velocity_limits: true
+      max_velocity: 0.147
+      has_acceleration_limits: false
+      has_jerk_limits: false
+    pitch:
+      has_position_limits: true
+      min_position: -0.139
+      max_position: 0.139
+      has_velocity_limits: true
+      max_velocity: 0.147
+      has_acceleration_limits: false
+      has_jerk_limits: false
+    roll:
+      has_position_limits: false
+      has_velocity_limits: true
+      max_velocity: 0.147
+      has_acceleration_limits: false
+      has_jerk_limits: false
+    surge_thruster_joint:
+      has_position_limits: false
+      has_velocity_limits: false
+      has_acceleration_limits: false
+      has_jerk_limits: true   # Limit the change in acceleration to protect the thruster itself
+      max_jerk: 20
+    front_yaw_thruster_joint:
+      has_position_limits: false
       has_velocity_limits: false
       has_acceleration_limits: false
       has_jerk_limits: true
-      max_jerk: 100.0
+      max_jerk: 20    
+    stern_yaw_thruster_joint:
+      has_position_limits: false
+      has_velocity_limits: false
+      has_acceleration_limits: false
+      has_jerk_limits: true
+      max_jerk: 20    
+    front_pitch_thruster_joint:
+      has_position_limits: false
+      has_velocity_limits: false
+      has_acceleration_limits: false
+      has_jerk_limits: true
+      max_jerk: 20    
+    stern_pitch_thruster_joint:
+      has_position_limits: false
+      has_velocity_limits: false
+      has_acceleration_limits: false
+      has_jerk_limits: true
+      max_jerk: 20    
 ################################################################################################
 Controller:  # parameters for the actual controller
   state_publish_rate:  25            # Override default
@@ -33,6 +95,18 @@ Controller:  # parameters for the actual controller
     - yaw
     - pitch
     - roll
+  joints_with_limits:
+    - x
+    - y
+    - z
+    - yaw
+    - pitch
+    - roll
+    - surge_thruster_joint
+    - front_yaw_thruster_joint
+    - stern_yaw_thruster_joint
+    - front_pitch_thruster_joint
+    - stern_pitch_thruster_joint
   constraints:
     goal_time: 0.5                   # Override default
     stopped_velocity_tolerance: 0.02 # Override default
