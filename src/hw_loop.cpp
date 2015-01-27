@@ -128,6 +128,25 @@ namespace UWEsub {
         /// register the joint effort interface
         registerInterface(&jnt_eff_interface);
 
+        // initialise the controller limits and register them
+        joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_x(pos_handle_x, limits.at(0), soft_limits.at(0));
+        jnt_limits_interface_.registerHandle(limit_handle_x);
+
+        joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_y(pos_handle_y, limits.at(1), soft_limits.at(1));                jnt_limits_interface_.registerHandle(limit_handle_x);
+        jnt_limits_interface_.registerHandle(limit_handle_y);
+
+        joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_z(pos_handle_z, limits.at(2), soft_limits.at(2));
+        jnt_limits_interface_.registerHandle(limit_handle_z);
+
+        joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_yaw(pos_handle_yaw, limits.at(3), soft_limits.at(3));
+        jnt_limits_interface_.registerHandle(limit_handle_yaw);
+
+        joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_pitch(pos_handle_pitch, limits.at(4), soft_limits.at(4));
+        jnt_limits_interface_.registerHandle(limit_handle_pitch);
+        
+        joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_roll(pos_handle_roll, limits.at(5), soft_limits.at(5));
+        jnt_limits_interface_.registerHandle(limit_handle_roll);
+
 
         /// Subscribe to the Feedback Signal
         feedback_fused = nh_.subscribe<nav_msgs::Odometry>("odometry/filtered", 1, &phoenix_hw_interface::sub_callback, this);
@@ -173,8 +192,8 @@ namespace UWEsub {
         }
 
         // Load all limits into:
-        limits.resize(11);
-        soft_limits.resize(11);
+        limits.resize(temp_joints.size());
+        soft_limits.resize(temp_joints.size());
 
         int x = 0;
         for (std::vector<std::string>::iterator it = temp_joints.begin(); it != temp_joints.end(); ++it, x++) {
@@ -187,7 +206,7 @@ namespace UWEsub {
             // Get the updates from the yaml file
             const bool rosparam_limits_ok = getJointLimits(*it, nh_, limits.at(x));
         }
-        
+
     }
 
 
@@ -285,7 +304,7 @@ namespace UWEsub {
             thruster_allocation();
 
             // Joint Limits go here
-
+            jnt_limits_interface_.enforceLimits(elapsed_time_);
             
             // calculate the thruster command from the force
             thrust_to_command();
