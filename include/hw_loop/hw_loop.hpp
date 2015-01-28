@@ -121,14 +121,12 @@ namespace UWEsub {
         // double state_x_position, state_x_velocity;
 
         //Controller Limits:
-        boost::shared_ptr<urdf::Model> urdf;
+        urdf::Model urdf;
 
         std::vector<JointLimits> limits;
         std::vector<SoftJointLimits> soft_limits;
         int get_controller_limits(void);
         joint_limits_interface::EffortJointSoftLimitsInterface jnt_limits_interface_;
-
-
     };
 }
 

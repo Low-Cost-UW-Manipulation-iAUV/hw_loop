@@ -179,7 +179,7 @@ namespace UWEsub {
     int phoenix_hw_interface::get_controller_limits(void) {
 
         // read the urdf from the parameter server
-        if (!urdf->initParam("/robot_description")){
+        if (!urdf.initParam("/robot_description")){
             ROS_ERROR("Failed to read the urdf from the parameter server");
             return -1;
         }
@@ -199,7 +199,7 @@ namespace UWEsub {
         for (std::vector<std::string>::iterator it = temp_joints.begin(); it != temp_joints.end(); ++it, x++) {
             
             // get the joint name from the param server BUT look up the data from the URDF FILE
-            boost::shared_ptr<const urdf::Joint> urdf_joint = urdf->getJoint(*it);
+            boost::shared_ptr<const urdf::Joint> urdf_joint = urdf.getJoint(*it);
             const bool urdf_limits_ok = getJointLimits(urdf_joint, limits.at(x));
             const bool urdf_soft_limits_ok = getSoftJointLimits(urdf_joint, soft_limits.at(x) );
             
