@@ -132,8 +132,7 @@ namespace UWEsub {
         joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_x(pos_handle_x, limits.at(0), soft_limits.at(0));
         jnt_limits_interface_.registerHandle(limit_handle_x);
 
-        joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_y(pos_handle_y, limits.at(1), soft_limits.at(1));                jnt_limits_interface_.registerHandle(limit_handle_x);
-        jnt_limits_interface_.registerHandle(limit_handle_y);
+        joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_y(pos_handle_y, limits.at(1), soft_limits.at(1));
 
         joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_z(pos_handle_z, limits.at(2), soft_limits.at(2));
         jnt_limits_interface_.registerHandle(limit_handle_z);
