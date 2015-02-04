@@ -4,12 +4,14 @@ thruster_interface:  # parameters necessary for runing the hardware_loop
   allocation_matrix:  # Based on DOI: 978-1-4799-0997-1/13/$31.00 by Miskovic et al.
     rows: 5  # corresponds to number of Thrusters
     columns: 6  # corresponds to number of DOF
-    data: [  # calculated in maple 
-    0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,
-    0.500000,0.000000,0.000000,0.000000,0.613497,0.000000,
-    0.500000,0.000000,0.000000,0.000000,-0.613497,0.000000,
-    0.000000,0.000000,0.500000,-0.714286,0.000000,0.000000,
-    0.000000,0.000000,0.500000,0.714286,0.000000,0.000000]
+    data: [  # calculated in Matlab 
+    1.0,  0.0,  0.0,  0.0,      0.0,      0.0,
+    0.0,  0.5,  0.0,  0.6098,   0.0,      0.0,
+    0.0,  0.5,  0.0,  -0.6098,  0.0,      0.0,
+    0.0,  0.0,  0.5,  0.0,      -0.7246,  0,
+    0.0,  0.0,  0.5,  0.0,      0.7246,   0]
+
+
   linearisation:  # Based on Fossen's simplified model: tau=b*|force|*force
     positive: [1, 1, 1, 1, 1]  # The values correspond to thruster 1->5
     negative: [1, 1, 1, 1, 1]
