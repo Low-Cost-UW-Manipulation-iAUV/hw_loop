@@ -296,14 +296,12 @@ namespace UWEsub {
             /// Let the controller do its work
             controller_manager_->update(ros::Time::now(), elapsed_time_);
 
-            // Limit the 5 DOFs that we control
-
+            // Joint Limits go here
+            jnt_limits_interface_.enforceLimits(elapsed_time_);
 
             // find invidivdual thruster force demands from body frame force demands
             thruster_allocation();
 
-            // Joint Limits go here
-            jnt_limits_interface_.enforceLimits(elapsed_time_);
             
             // calculate the thruster command from the force
             thrust_to_command();
