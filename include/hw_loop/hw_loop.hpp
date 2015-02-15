@@ -90,8 +90,11 @@ namespace UWEsub {
         bool thrusters_scaled_down;
         int thrust_to_command(void);
         int get_linearisation_parameter(void);
-        std::vector<double> positive_linearisation;
-        std::vector<double> negative_linearisation;
+        std::vector<double> positive_linearisation_m;
+        std::vector<double> negative_linearisation_m;
+        std::vector<double> positive_linearisation_c;
+        std::vector<double> negative_linearisation_c;
+
 
         int thruster_allocation(void);
         int get_allocation_matrix(void);
@@ -107,10 +110,10 @@ namespace UWEsub {
         boost::shared_ptr<controller_manager::ControllerManager> controller_manager_;
 
         /// controller_manager
-        double cmd[6];
-        double pos[6];
-        double vel[6];
-        double eff[6];
+        ublas::vector<double> cmd;
+        ublas::vector<double> pos;
+        ublas::vector<double> vel;
+        ublas::vector<double> eff;
 
         /// write command to hardware thruster drivers
         ublas::vector<double> write_command;

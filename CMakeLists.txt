@@ -24,7 +24,7 @@ catkin_package(
 	 joint_limits_interface
 	 tf
 	 urdf
-	 INCLUDE_DIRS
+	INCLUDE_DIRS include
 	 )
 
 ## Build talker and listener

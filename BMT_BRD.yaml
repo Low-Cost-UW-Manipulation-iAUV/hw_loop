@@ -11,8 +11,12 @@ thruster_interface:  # parameters necessary for runing the hardware_loop
     0.0,  0.0,  0.5,  0.0,      -0.7246,  0,
     0.0,  0.0,  0.5,  0.0,      0.7246,   0]
   linearisation:  # Based on Fossen's simplified model: tau=b*|force|*force
-    positive: [1, 1, 1, 1, 1]  # The values correspond to thruster 1->5
-    negative: [1, 1, 1, 1, 1]
+    positive: # The values correspond to thruster 1->5
+      m: [6.729, 5.6306, 5.6306, 5.6306, 5.6306]
+      c: [9.38, 13.087, 13.087, 13.087, 13.087]
+    negative:
+      m: [6.3776, 5.8241, 5.8241, 5.8241, 5.8241]
+      c: [-20, -12.752, -12.752, -12.752, -12.752]
   joint_limits:  # How do we ensure that the thrusters dont switch from -100 to +100 directly? 
     x:  # Check this with Adolfo again.
       has_position_limits: false

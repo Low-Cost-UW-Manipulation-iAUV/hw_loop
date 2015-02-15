@@ -32,34 +32,14 @@ namespace UWEsub {
 
     phoenix_hw_interface::phoenix_hw_interface() {
         ///set the controller output to 0
-        cmd[0] = 0.0;
-        cmd[1] = 0.0;
-        cmd[2] = 0.0;
-        cmd[3] = 0.0;
-        cmd[4] = 0.0;
-        cmd[5] = 0.0;
+        cmd.resize(6,0.0);
 
         // and the controller input / current position
-        pos[0] = 0.0;
-        pos[1] = 0.0;
-        pos[2] = 0.0;
-        pos[3] = 0.0;
-        pos[4] = 0.0;
-        pos[5] = 0.0;
+        pos.resize(6,0.0);
 
-        vel[0] = 0.0;
-        vel[1] = 0.0;
-        vel[2] = 0.0;
-        vel[3] = 0.0;
-        vel[4] = 0.0;
-        vel[5] = 0.0;
+        vel.resize(6,0.0);
 
-        eff[0] = 0.0;        
-        eff[1] = 0.0;        
-        eff[2] = 0.0;        
-        eff[3] = 0.0;        
-        eff[4] = 0.0;        
-        eff[5] = 0.0;        
+        eff.resize(6,0.0);
 
 
         sequence = 0;
@@ -280,7 +260,7 @@ namespace UWEsub {
         // get the Quaternion into 
         tf::Quaternion q(message->pose.pose.orientation.x, message->pose.pose.orientation.y, message->pose.pose.orientation.z, message->pose.pose.orientation.w);
         tf::Matrix3x3 m(q);
-        m.getRPY(pos[ROLL], pos[YAW], pos[PITCH]);                      
+        m.getRPY(pos[ROLL], pos[PITCH], pos[YAW]);
     }
 
 
@@ -404,15 +384,23 @@ namespace UWEsub {
     /** get_linearisation_parameter(): gets the parameters from the server
     */
     int phoenix_hw_interface::get_linearisation_parameter(void) {
-        if (!nh_.getParam("/thruster_interface/linearisation/positive", positive_linearisation)) {
-            ROS_ERROR("5_DOF_hw_loop: Could not find positive linearisation on the parameter server\n");
+        if (!nh_.getParam("/thruster_interface/linearisation/positive/m", positive_linearisation_m)) {
+            ROS_ERROR("5_DOF_hw_loop: Could not find positive linearisation 'm' on the parameter server\n");
+            return EXIT_FAILURE;
+        }
+        if (!nh_.getParam("/thruster_interface/linearisation/positive/c", positive_linearisation_c)) {
+            ROS_ERROR("5_DOF_hw_loop: Could not find positive linearisation 'c' on the parameter server\n");
             return EXIT_FAILURE;
         }
 
-        if (!nh_.getParam("/thruster_interface/linearisation/negative", negative_linearisation)) {
-            ROS_ERROR("5_DOF_hw_loop: Could not find negative linearisation on the parameter server\n");
+        if (!nh_.getParam("/thruster_interface/linearisation/negative/m", negative_linearisation_m)) {
+            ROS_ERROR("5_DOF_hw_loop: Could not find negative linearisation 'm' on the parameter server\n");
             return EXIT_FAILURE;
         }
+        if (!nh_.getParam("/thruster_interface/linearisation/negative/c", negative_linearisation_c)) {
+            ROS_ERROR("5_DOF_hw_loop: Could not find negative linearisation 'c' on the parameter server\n");
+            return EXIT_FAILURE;
+        }        
     }
 
     /** get_maximum_command(): gets the parameters from the server
@@ -469,12 +457,12 @@ namespace UWEsub {
 
         for (int x = 0; x < write_command.size(); x++) {
             // handle the positive force
-            if (thrust[x] > 0) {
-                write_command[x] = sqrt(thrust[x]/positive_linearisation[x]);
+            if (thrust[x] >= 0) {
+                write_command[x] = thrust[x] * positive_linearisation_m[x] + positive_linearisation_c[x]; //sqrt(thrust[x]/positive_linearisation[x]);
 
                 // handle negative force
             } else if (thrust[x] < 0) {
-                write_command[x] = sqrt(abs(thrust[x])/negative_linearisation[x]) * -1;
+                write_command[x] = thrust[x] * negative_linearisation_m[x] + negative_linearisation_c[x]; //sqrt(abs(thrust[x])/negative_linearisation[x]) * -1;
             }
         }
 
