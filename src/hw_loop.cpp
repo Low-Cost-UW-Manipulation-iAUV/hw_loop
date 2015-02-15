@@ -32,15 +32,38 @@ namespace UWEsub {
 
     phoenix_hw_interface::phoenix_hw_interface() {
         ///set the controller output to 0
-        cmd.resize(6,0.0);
+        cmd.resize(6);
+        cmd[0] = 0.0;
+        cmd[1] = 0.0;
+        cmd[2] = 0.0;
+        cmd[3] = 0.0;
+        cmd[4] = 0.0;
+        cmd[5] = 0.0;
 
         // and the controller input / current position
-        pos.resize(6,0.0);
+        pos.resize(6);
+        pos[0] = 0.0;
+        pos[1] = 0.0;
+        pos[2] = 0.0;
+        pos[3] = 0.0;
+        pos[4] = 0.0;
+        pos[5] = 0.0;
 
-        vel.resize(6,0.0);
+        vel.resize(6);
+        vel[0] = 0.0;
+        vel[1] = 0.0;
+        vel[2] = 0.0;
+        vel[3] = 0.0;
+        vel[4] = 0.0;
+        vel[5] = 0.0;
 
-        eff.resize(6,0.0);
-
+        eff.resize(6);
+        eff[0] = 0.0;
+        eff[1] = 0.0;
+        eff[2] = 0.0;
+        eff[3] = 0.0;
+        eff[4] = 0.0;
+        eff[5] = 0.0;
 
         sequence = 0;
         terminate_flag = false;
@@ -272,17 +295,19 @@ namespace UWEsub {
         } else {
             /// Update the time since the last update
             ros::Duration elapsed_time_ = ros::Duration(event.current_real - event.last_real);
+            ROS_INFO("hw_loop - pos: %f, %f, %f, %f, %f, %f", pos[0],pos[1],pos[2],pos[3],pos[4], pos[5]);
 
             /// Let the controller do its work
             controller_manager_->update(ros::Time::now(), elapsed_time_);
 
             // Joint Limits go here
-            jnt_limits_interface_.enforceLimits(elapsed_time_);
+            //jnt_limits_interface_.enforceLimits(elapsed_time_);
 
+            ROS_INFO("hw_loop - cmd: %f, %f, %f, %f, %f, %f", cmd[0],cmd[1],cmd[2],cmd[3],cmd[4], cmd[5]);
             // find invidivdual thruster force demands from body frame force demands
             thruster_allocation();
 
-            
+            ROS_INFO("hw_loop - write_cmd: %f, %f, %f, %f, %f", write_command[0],write_command[1],write_command[2],write_command[3],write_command[4]);
             // calculate the thruster command from the force
             thrust_to_command();
 
@@ -433,6 +458,7 @@ namespace UWEsub {
             for(int x = 0; x < write_command.size(); x++) {
                 write_command[x] = write_command[x] * scale_down;
             }
+            ROS_INFO("hw_loop: scaling down commands");
         } else {
             thrusters_scaled_down = false;
         }
@@ -483,6 +509,9 @@ namespace UWEsub {
         for (int x = 0; x < 6; x++) {
             temp_cmd[x] = cmd[x];
         }
+        std::cout << allocation_matrix << "\n";
+        std::cout << temp_cmd << "\n";
+
         // calculate the product of allocation_matrix * temp_command = write command per thruster. This is in boost::ublas
         ublas::axpy_prod(allocation_matrix, temp_cmd, thrust, true);
         return EXIT_SUCCESS;       

@@ -1,5 +1,5 @@
 <launch>
 	<rosparam command="load" file="$(find hw_loop)/BMT_BRD.yaml" />
-	<node name="BMT_BRD_hw_loop" pkg="hw_loop" type="hw_loop"/>
+	<node name="BMT_BRD_hw_loop" pkg="hw_loop" type="hw_loop"  output="screen"/>
 </launch>
 

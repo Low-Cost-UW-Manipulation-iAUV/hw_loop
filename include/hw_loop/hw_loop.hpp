@@ -95,7 +95,6 @@ namespace UWEsub {
         std::vector<double> positive_linearisation_c;
         std::vector<double> negative_linearisation_c;
 
-
         int thruster_allocation(void);
         int get_allocation_matrix(void);
         ublas::matrix<double> allocation_matrix;
