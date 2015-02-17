@@ -25,7 +25,8 @@
 #include <tf/transform_datatypes.h>
 #include "tf/transform_listener.h"
 #include <tf/transform_broadcaster.h>
-
+#include "tf/message_filter.h"
+#include "message_filters/subscriber.h"
 #include "nav_msgs/Odometry.h"
     
 #include "ros/ros.h"
@@ -69,21 +70,17 @@ namespace UWEsub {
         static bool safe;
         bool are_thrusters_scaled_down(void);
         bool panic( std_srvs::Empty::Request& request,  std_srvs::Empty::Response& response);
-        bool setIsoReference( ros_control_iso::string_ok::Request& request, ros_control_iso::string_ok::Response& response);
 
 
         /// DOF feedback subscriber callbacks
-        void sub_callback(const nav_msgs::Odometry::ConstPtr& message);
-        nav_msgs::Odometry callback_message;
+        void sub_callback(const nav_msgs::Odometry::ConstPtr& );
         void transform_for_controller_feedback(void);
 
-        void extract_6_DOF(ublas::vector<double>&);
         void extract_6_DOF(const geometry_msgs::PoseStamped& , ublas::vector<double>&);
 
 
     private:
-        /// DOF feedback subscribers
-        ros::Subscriber feedback_fused;
+
 
         /// virtual panic button
         ros::ServiceServer panic_stopper;
@@ -98,6 +95,7 @@ namespace UWEsub {
         ros::Timer timer_update;
 
         /// Thruster linearisation, Allocation and scaling
+        nav_msgs::Odometry callback_message;
 
         int scale_commands(void);
         int get_maximum_command(void);
@@ -118,17 +116,23 @@ namespace UWEsub {
         boost::scoped_ptr <realtime_tools::RealtimePublisher <std_msgs::Float32MultiArray> > thruster_driver_command_publisher_;
         unsigned int sequence;
 
-        // Transformations
+        // Transform Odometry into correct feedback frame
+        //message_filter - subscriber
+        message_filters::Subscriber<nav_msgs::Odometry> fused_pose_sub;
+        tf::MessageFilter<nav_msgs::Odometry> * fused_pose_filter;
+
         tf::TransformListener listener;
         tf::TransformBroadcaster bc_feedback;
         void publish_feedback_frame(bool);
+        bool setIsoReference( ros_control_iso::string_ok::Request& request, ros_control_iso::string_ok::Response& response);
 
         void init_pool_origin(void);
         geometry_msgs::PoseStamped Pool_Origin;
         geometry_msgs::PoseStamped iso_reference_pose;
         ros::ServiceServer set_iso_reference_service;
-        void read(void);
+        void which_reference_to_broadcast(void);
         std::string goal_frame;
+
         /// ros_controller interface
         hardware_interface::JointStateInterface joint_state_interface;
         hardware_interface::EffortJointInterface jnt_eff_interface;
@@ -146,10 +150,6 @@ namespace UWEsub {
         /// write command to hardware thruster drivers
         ublas::vector<double> write_command;
         ublas::vector<double> thrust;
-
-        //ros::Duration control_period_;
-
-        // double state_x_position, state_x_velocity;
 
         //Controller Limits:
         urdf::Model urdf;

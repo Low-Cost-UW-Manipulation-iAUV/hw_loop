@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 	controller_manager
 	hardware_interface
 	joint_limits_interface
+	message_filters
 	tf 
 	urdf)
 find_package(Boost REQUIRED COMPONENTS thread system)
@@ -26,6 +27,7 @@ catkin_package(
 	 joint_limits_interface
 	 ros_control_iso
 	 tf
+	 message_filters
 	 urdf
 	 nav_msgs
 	 geometry_msgs
