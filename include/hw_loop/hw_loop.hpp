@@ -21,11 +21,19 @@
 #include <joint_limits_interface/joint_limits_rosparam.h>
 #include <joint_limits_interface/joint_limits_interface.h>
 
+// TF 
+#include <tf/transform_datatypes.h>
+#include "tf/transform_listener.h"
+#include <tf/transform_broadcaster.h>
+
 #include "nav_msgs/Odometry.h"
     
 #include "ros/ros.h"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_srvs/Empty.h"
+#include "geometry_msgs/PoseStamped.h"
+#include "ros_control_iso/string_ok.h"
+
 
 
 // boost library ublas for matrix
@@ -61,10 +69,15 @@ namespace UWEsub {
         static bool safe;
         bool are_thrusters_scaled_down(void);
         bool panic( std_srvs::Empty::Request& request,  std_srvs::Empty::Response& response);
+        bool setIsoReference( ros_control_iso::string_ok::Request& request, ros_control_iso::string_ok::Response& response);
 
 
         /// DOF feedback subscriber callbacks
         void sub_callback(const nav_msgs::Odometry::ConstPtr& message);
+        nav_msgs::Odometry callback_message;
+        void extract_6_DOF(ublas::vector<double>&);
+        void extract_6_DOF(const geometry_msgs::PoseStamped& , ublas::vector<double>&);
+
 
     private:
         /// DOF feedback subscribers
@@ -103,6 +116,15 @@ namespace UWEsub {
         boost::scoped_ptr <realtime_tools::RealtimePublisher <std_msgs::Float32MultiArray> > thruster_driver_command_publisher_;
         unsigned int sequence;
 
+        // Transformations
+        tf::TransformListener listener;
+        void transform_frame(std::string , ublas::vector<double>& );
+        tf::TransformBroadcaster broadcaster;
+        tf::Vector3 ISO_starting_point;
+        void publish_transform(void);
+        ros::ServiceServer set_iso_reference_service;
+        void get_correct_feedback(void);
+        std::string goal_frame;
         /// ros_controller interface
         hardware_interface::JointStateInterface joint_state_interface;
         hardware_interface::EffortJointInterface jnt_eff_interface;
@@ -113,6 +135,9 @@ namespace UWEsub {
         ublas::vector<double> pos;
         ublas::vector<double> vel;
         ublas::vector<double> eff;
+
+        // Holds the data from the callback before it is being transformed...
+        std::vector<double> callback_pos;
 
         /// write command to hardware thruster drivers
         ublas::vector<double> write_command;

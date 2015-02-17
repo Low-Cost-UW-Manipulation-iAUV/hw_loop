@@ -7,6 +7,8 @@ find_package(catkin REQUIRED COMPONENTS
 	rospy
 	std_msgs
 	nav_msgs
+	geometry_msgs
+	ros_control_iso
 	message_generation
 	controller_manager
 	hardware_interface
@@ -22,8 +24,11 @@ catkin_package(
 	 controller_manager
 	 hardware_interface
 	 joint_limits_interface
+	 ros_control_iso
 	 tf
 	 urdf
+	 nav_msgs
+	 geometry_msgs
 	INCLUDE_DIRS include
 	 )
 
@@ -32,4 +37,4 @@ include_directories(include ${catkin_INCLUDE_DIRS} SYSTEM ${Boost_INCLUDE_DIR} )
 
 add_executable(hw_loop src/hw_loop.cpp )
 target_link_libraries(hw_loop ${catkin_LIBRARIES}  ${roscpp_LIBRARIES} ${Boost_LIBRARIES} )
-add_dependencies(hw_loop std_msgs_generate_messages_cpp)
+add_dependencies(hw_loop std_msgs_generate_messages_cpp nav_msgs_generate_messages_cpp geometry_generate_messages_cpp ros_control_iso_generate_messages_cpp)

@@ -91,11 +91,11 @@ Controller:  # parameters for the actual controller
 #    head_2_joint:
 #      goal: 0.01                     # Not enforced if unspecified
   gains: # Required because we're controlling an effort interface
-    x:      {p: 100,  d: 0, i: 0, i_clamp: 1}
-    y:      {p: 100,  d: 0, i: 0, i_clamp: 1}
-    z:      {p: 100,  d: 0, i: 0, i_clamp: 1}
-    yaw:    {p: 100,  d: 0, i: 0, i_clamp: 1}
-    pitch:  {p: 100,  d: 0, i: 0, i_clamp: 1}
-    roll:   {p: 100,  d: 0, i: 0, i_clamp: 1}
+    x:      {p: 10,  d: 0, i: 0, i_clamp: 1}
+    y:      {p: 10,  d: 0, i: 0, i_clamp: 1}
+    z:      {p: 10,  d: 0, i: 0, i_clamp: 1}
+    yaw:    {p: 10,  d: 0, i: 0, i_clamp: 1}
+    pitch:  {p: 10,  d: 0, i: 0, i_clamp: 1}
+    roll:   {p: 10,  d: 0, i: 0, i_clamp: 1}
 
 
