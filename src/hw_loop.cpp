@@ -355,7 +355,7 @@ void phoenix_hw_interface::transform_for_controller_feedback(void) {
     geometry_msgs::PoseStamped pose_out;
     // find the subs pose in the pool frame
     try {
-        listener.waitForTransform(pose_in.header.frame_id, "/feedback", ros::Time(0), ros::Duration(0.03));
+        listener.waitForTransform(pose_in.header.frame_id, "/feedback", ros::Time(0), ros::Duration(0.07));
         listener.transformPose("/feedback", pose_in, pose_out);
     } catch (tf::TransformException &ex) {
       ROS_ERROR("transform for controller feedback: %s\n", ex.what()); //Print exception which was caught
