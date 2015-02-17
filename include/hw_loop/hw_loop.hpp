@@ -123,7 +123,7 @@ namespace UWEsub {
         tf::Vector3 ISO_starting_point;
         void publish_transform(void);
         ros::ServiceServer set_iso_reference_service;
-        void get_correct_feedback(void);
+        void read(void);
         std::string goal_frame;
         /// ros_controller interface
         hardware_interface::JointStateInterface joint_state_interface;

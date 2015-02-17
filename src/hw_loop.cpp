@@ -363,7 +363,7 @@ void phoenix_hw_interface::publish_transform(void) {
     ROS_INFO("sent broadcast from odom to ISO");
 }
 
-void phoenix_hw_interface::get_correct_feedback(void) {
+void phoenix_hw_interface::read(void) {
     // if the odom frame is OK, do nothing
     if (goal_frame == "odom") {
         extract_6_DOF(pos);
@@ -387,7 +387,7 @@ void phoenix_hw_interface::update(const ros::TimerEvent& event) {
         ros::Duration elapsed_time_ = ros::Duration(event.current_real - event.last_real);
 
         // Make sure the feedback is in the correct frame...
-        get_correct_feedback();
+        read();
 
         ROS_INFO("hw_loop - pos: %f, %f, %f, %f, %f, %f", pos[0],pos[1],pos[2],pos[3],pos[4], pos[5]);
 
