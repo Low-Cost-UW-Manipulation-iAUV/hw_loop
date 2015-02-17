@@ -270,22 +270,27 @@ bool phoenix_hw_interface::panic( std_srvs::Empty::Request& request,  std_srvs::
 
 }
 
-/** setIsoReference(): Sets the current position (in pool) as the reference for the ISO transformation procedure, stores it in ISO_starting_pose
+/** setIsoReference(): Sets the current position (in pool) as the reference for the ISO transformation procedure, stores it in iso_reference_pose
 */
 bool phoenix_hw_interface::setIsoReference(ros_control_iso::string_ok::Request& request, ros_control_iso::string_ok::Response& response) {
     geometry_msgs::PoseStamped temp_in;
+    geometry_msgs::PoseStamped temp_out;
     // Get Convert the Pose with Covariance Stamped into PoseStamped
     temp_in.header = callback_message.header;
     temp_in.pose = callback_message.pose.pose;
     try {
-        listener.waitForTransform(callback_message.header.frame_id, "/pool", ros::Time(0), ros::Duration(0.03));
-        listener.transformPose("/pool", temp_in, ISO_starting_pose);
+        listener.waitForTransform(callback_message.header.frame_id, "/pool", ros::Time(0), ros::Duration(1));
+        listener.transformPose("/pool", temp_in, temp_out);
     } catch (tf::TransformException &ex) {
       printf ("Failure %s\n", ex.what()); //Print exception which was caught
       return 0;
-    }    
+    } 
+    temp_out.header.stamp = ros::Time(0);
+    iso_reference_pose = temp_out;
     //Tell the little state machine in read() what to do
     goal_frame = request.data;
+    ROS_INFO("iso_reference_pose [pool]: x: %f, y: %f, z: %f", iso_reference_pose.pose.position.x,iso_reference_pose.pose.position.y,iso_reference_pose.pose.position.z);
+    ROS_INFO("goal:frame: %s", goal_frame.c_str());
     return 1;
 }
 
@@ -319,7 +324,7 @@ void phoenix_hw_interface::extract_6_DOF(ublas::vector<double>& extracted_data) 
     tf::Quaternion q(callback_message.pose.pose.orientation.x, callback_message.pose.pose.orientation.y, callback_message.pose.pose.orientation.z, callback_message.pose.pose.orientation.w);
     tf::Matrix3x3 m(q);
     m.getRPY(extracted_data[ROLL], extracted_data[PITCH], extracted_data[YAW]);
-    ROS_INFO("x: %f, y: %f, z: %f, roll: %f, pitch: %f, yaw: %f",extracted_data[SURGE], extracted_data[SWAY], extracted_data[HEAVE], extracted_data[ROLL], extracted_data[PITCH], extracted_data[YAW]);
+    ROS_INFO("extracted: x: %f, y: %f, z: %f, roll: %f, pitch: %f, yaw: %f",extracted_data[SURGE], extracted_data[SWAY], extracted_data[HEAVE], extracted_data[ROLL], extracted_data[PITCH], extracted_data[YAW]);
 }
 
 /** extract_6_DOF(): Extract the data from the Odometry message into a geometry_msgs::PoseStamped
@@ -333,23 +338,30 @@ void phoenix_hw_interface::extract_6_DOF(const geometry_msgs::PoseStamped& store
     tf::Quaternion q(stored_message.pose.orientation.x, stored_message.pose.orientation.y, stored_message.pose.orientation.z, stored_message.pose.orientation.w);
     tf::Matrix3x3 m(q);
     m.getRPY(extracted_data[ROLL], extracted_data[PITCH], extracted_data[YAW]);
-    ROS_INFO("x: %f, y: %f, z: %f, roll: %f, pitch: %f, yaw: %f",extracted_data[SURGE], extracted_data[SWAY], extracted_data[HEAVE], extracted_data[ROLL], extracted_data[PITCH], extracted_data[YAW]);    
+    ROS_INFO("extracted: x: %f, y: %f, z: %f, roll: %f, pitch: %f, yaw: %f",extracted_data[SURGE], extracted_data[SWAY], extracted_data[HEAVE], extracted_data[ROLL], extracted_data[PITCH], extracted_data[YAW]);    
 }
 
 
-/** transform_for_controller_feedback(): Uses a pose expressed in base_link as the reference for our controller
+/** transform_for_controller_feedback(): Uses a pose reference to feed the controller
+                                        Transforms the subs position in odom into the feedback frame
+                                        extracts the position
 */
-void phoenix_hw_interface::transform_for_controller_feedback(geometry_msgs::PoseStamped reference) {
-    geometry_msgs::PoseStamped pose_out;
+void phoenix_hw_interface::transform_for_controller_feedback(void) {
+    // Convert the PoseWithCovarianceStamped into a simple PoseStamped
+    geometry_msgs::PoseStamped pose_in;
+    pose_in.header = callback_message.header;
+    pose_in.pose = callback_message.pose.pose;
 
+    geometry_msgs::PoseStamped pose_out;
     // find the subs pose in the pool frame
     try {
-        listener.waitForTransform(reference.header.frame_id, "/base_link", ros::Time(0), ros::Duration(0.03));
-        listener.transformPose("/base_link", reference, pose_out);
+        listener.waitForTransform(pose_in.header.frame_id, "/feedback", ros::Time(0), ros::Duration(0.03));
+        listener.transformPose("/feedback", pose_in, pose_out);
     } catch (tf::TransformException &ex) {
-      ROS_ERROR("Failure %s\n", ex.what()); //Print exception which was caught
+      ROS_ERROR("transform for controller feedback: %s\n", ex.what()); //Print exception which was caught
       return;
     }
+    ROS_INFO("iso_reference_pose: %f, %f, %f", iso_reference_pose.pose.position.x, iso_reference_pose.pose.position.y, iso_reference_pose.pose.position.z);
 
     // Get the data out of the odometry message
     extract_6_DOF(pose_out, pos);
@@ -357,28 +369,62 @@ void phoenix_hw_interface::transform_for_controller_feedback(geometry_msgs::Pose
 
 void phoenix_hw_interface::init_pool_origin(void) {
     // Set a pose at the pool origin
-    Pool_Origin.header.stamp = ros::Time::now();
+    Pool_Origin.header.stamp = ros::Time(0);
     Pool_Origin.header.frame_id = "pool";
     Pool_Origin.pose.orientation.x = 0.0;
     Pool_Origin.pose.orientation.y = 0.0;
     Pool_Origin.pose.orientation.z = 0.0;
+    Pool_Origin.pose.orientation.w = 1.0;
+
 
     Pool_Origin.pose.position.x = 0.0;
     Pool_Origin.pose.position.y = 0.0;
     Pool_Origin.pose.position.z = 0.0;
 }
 
+void phoenix_hw_interface::publish_feedback_frame(bool pool_corner) {
+    // Get the current transform from pool to base_link - current pose of sub in pool
+    tf::StampedTransform transform_found;
+    try {
+        listener.lookupTransform("/pool", "/base_link" , ros::Time(0), transform_found);        
+    } catch (tf::TransformException &ex) {
+      ROS_ERROR("Publish Feedback Frame%s",ex.what());
+      ros::Duration(1.0).sleep();        
+    }
+
+    // Publish a new transform from pool->feedback
+    tf::Transform transform;
+
+    // Use the pool corner as reference point (0,0,0)- for normal operation
+    if(pool_corner == true) {
+        transform.setOrigin( tf::Vector3(Pool_Origin.pose.position.x,Pool_Origin.pose.position.y,Pool_Origin.pose.position.z) );
+    
+    // Use the iso reference position set when calling the service
+    } else {
+        transform.setOrigin( tf::Vector3(iso_reference_pose.pose.position.x,iso_reference_pose.pose.position.y,iso_reference_pose.pose.position.z) );
+    }
+    // use the rotation from pool->base_link for the rotation
+    transform.setRotation(transform_found.getRotation() );
+
+    //broadcast it as the transform from pool to feedback
+    bc_feedback.sendTransform( tf::StampedTransform(transform, ros::Time::now(), "/pool", "/feedback" ) );
+
+}
+
 void phoenix_hw_interface::read(void) {
     // if the goal frame is pool, 
     if (goal_frame == "pool") {
-        transform_for_controller_feedback(Pool_Origin);   // For ISO we need a frame 
+        publish_feedback_frame(true);
+        transform_for_controller_feedback();   // For ISO we need a frame 
     } else if (goal_frame == "ISO") {
-        transform_for_controller_feedback(ISO_starting_pose);
+        publish_feedback_frame(false);
+        transform_for_controller_feedback();
     } else {    //any other frame
         ROS_ERROR("goal_frame is unknown");
     }
 
 }
+
 /** Update():  the real action happens here: run the controllers and update the actuator output
 */
 void phoenix_hw_interface::update(const ros::TimerEvent& event) {

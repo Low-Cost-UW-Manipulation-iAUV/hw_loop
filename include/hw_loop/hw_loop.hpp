@@ -75,7 +75,7 @@ namespace UWEsub {
         /// DOF feedback subscriber callbacks
         void sub_callback(const nav_msgs::Odometry::ConstPtr& message);
         nav_msgs::Odometry callback_message;
-        void transform_for_controller_feedback(geometry_msgs::PoseStamped);
+        void transform_for_controller_feedback(void);
 
         void extract_6_DOF(ublas::vector<double>&);
         void extract_6_DOF(const geometry_msgs::PoseStamped& , ublas::vector<double>&);
@@ -120,10 +120,12 @@ namespace UWEsub {
 
         // Transformations
         tf::TransformListener listener;
-        
+        tf::TransformBroadcaster bc_feedback;
+        void publish_feedback_frame(bool);
+
         void init_pool_origin(void);
         geometry_msgs::PoseStamped Pool_Origin;
-        geometry_msgs::PoseStamped ISO_starting_pose;
+        geometry_msgs::PoseStamped iso_reference_pose;
         ros::ServiceServer set_iso_reference_service;
         void read(void);
         std::string goal_frame;
