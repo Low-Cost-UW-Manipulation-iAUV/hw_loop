@@ -34,7 +34,7 @@ using joint_limits_interface::PositionJointSoftLimitsInterface;
 namespace UWEsub {
 
 phoenix_hw_interface::phoenix_hw_interface() {
-    goal_frame = "odom";
+    goal_frame = "pool";
     ///set the controller output to 0
     cmd.resize(6);
     cmd[0] = 0.0;
@@ -75,6 +75,8 @@ phoenix_hw_interface::phoenix_hw_interface() {
     sequence = 0;
     terminate_flag = false;
     safe = false;
+    // set the pool origin = [0,0,0,0,0,0]
+    init_pool_origin();
 
     /// get the parameters
     get_allocation_matrix();
@@ -268,10 +270,21 @@ bool phoenix_hw_interface::panic( std_srvs::Empty::Request& request,  std_srvs::
 
 }
 
-/** setIsoReference(): Sets the current position (in odom) as the reference for the ISO transformation procedure
+/** setIsoReference(): Sets the current position (in pool) as the reference for the ISO transformation procedure, stores it in ISO_starting_pose
 */
-bool phoenix_hw_interface::setIsoReference( ros_control_iso::string_ok::Request& request,  ros_control_iso::string_ok::Response& response) {
-    ISO_starting_point = tf::Vector3(callback_message.pose.pose.position.x, callback_message.pose.pose.position.y, callback_message.pose.pose.position.z);
+bool phoenix_hw_interface::setIsoReference(ros_control_iso::string_ok::Request& request, ros_control_iso::string_ok::Response& response) {
+    geometry_msgs::PoseStamped temp_in;
+    // Get Convert the Pose with Covariance Stamped into PoseStamped
+    temp_in.header = callback_message.header;
+    temp_in.pose = callback_message.pose.pose;
+    try {
+        listener.waitForTransform(callback_message.header.frame_id, "/pool", ros::Time(0), ros::Duration(0.03));
+        listener.transformPose("/pool", temp_in, ISO_starting_pose);
+    } catch (tf::TransformException &ex) {
+      printf ("Failure %s\n", ex.what()); //Print exception which was caught
+      return 0;
+    }    
+    //Tell the little state machine in read() what to do
     goal_frame = request.data;
     return 1;
 }
@@ -323,57 +336,46 @@ void phoenix_hw_interface::extract_6_DOF(const geometry_msgs::PoseStamped& store
     ROS_INFO("x: %f, y: %f, z: %f, roll: %f, pitch: %f, yaw: %f",extracted_data[SURGE], extracted_data[SWAY], extracted_data[HEAVE], extracted_data[ROLL], extracted_data[PITCH], extracted_data[YAW]);    
 }
 
-/** transform_frame(): Transforms data from a frame into a given other frame and stores it in a ublas::vector
+
+/** transform_for_controller_feedback(): Uses a pose expressed in base_link as the reference for our controller
 */
-void phoenix_hw_interface::transform_frame(std::string goal_frame, ublas::vector<double>& extracted_data) {
-    geometry_msgs::PoseStamped temp_in;
-    geometry_msgs::PoseStamped output_pose;
-    // Get Convert the Pose with Covariance Stamped into PoseStamped
-    temp_in.header = callback_message.header;
-    temp_in.pose = callback_message.pose.pose;
+void phoenix_hw_interface::transform_for_controller_feedback(geometry_msgs::PoseStamped reference) {
+    geometry_msgs::PoseStamped pose_out;
+
+    // find the subs pose in the pool frame
     try {
-        listener.waitForTransform("/odom", "/base_link", ros::Time(0), ros::Duration(0.03));
-        listener.transformPose(goal_frame, temp_in, output_pose);
+        listener.waitForTransform(reference.header.frame_id, "/base_link", ros::Time(0), ros::Duration(0.03));
+        listener.transformPose("/base_link", reference, pose_out);
     } catch (tf::TransformException &ex) {
-      printf ("Failure %s\n", ex.what()); //Print exception which was caught
+      ROS_ERROR("Failure %s\n", ex.what()); //Print exception which was caught
       return;
     }
+
     // Get the data out of the odometry message
-    extract_6_DOF(output_pose, extracted_data);
+    extract_6_DOF(pose_out, pos);
 }
 
-/** publish_transform(): publishes a transform from odom to the ISO frame
-*/
-void phoenix_hw_interface::publish_transform(void) {
-    // find a transform f
-    tf::StampedTransform found_transform;
-    try{
-        listener.lookupTransform("/odom", "/base_link", ros::Time(0), found_transform);
-    }
-    catch (tf::TransformException ex){
-      ROS_ERROR("%s",ex.what());
-      ros::Duration(1.0).sleep();
-      return;
-    }
-    tf::Transform transform;
-    transform.setRotation(found_transform.getRotation());
-    transform.setOrigin(ISO_starting_point);
-    
-    broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "/odom", "/ISO"));
-    ROS_INFO("sent broadcast from odom to ISO");
+void phoenix_hw_interface::init_pool_origin(void) {
+    // Set a pose at the pool origin
+    Pool_Origin.header.stamp = ros::Time::now();
+    Pool_Origin.header.frame_id = "pool";
+    Pool_Origin.pose.orientation.x = 0.0;
+    Pool_Origin.pose.orientation.y = 0.0;
+    Pool_Origin.pose.orientation.z = 0.0;
+
+    Pool_Origin.pose.position.x = 0.0;
+    Pool_Origin.pose.position.y = 0.0;
+    Pool_Origin.pose.position.z = 0.0;
 }
 
 void phoenix_hw_interface::read(void) {
-    // if the odom frame is OK, do nothing
-    if (goal_frame == "odom") {
-        extract_6_DOF(pos);
-    // For ISO we need a frame 
+    // if the goal frame is pool, 
+    if (goal_frame == "pool") {
+        transform_for_controller_feedback(Pool_Origin);   // For ISO we need a frame 
     } else if (goal_frame == "ISO") {
-        publish_transform();
-        transform_frame("ISO", pos);
+        transform_for_controller_feedback(ISO_starting_pose);
     } else {    //any other frame
-        transform_frame(goal_frame, pos);
-
+        ROS_ERROR("goal_frame is unknown");
     }
 
 }
