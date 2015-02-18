@@ -342,6 +342,10 @@ void phoenix_hw_interface::sub_callback(const nav_msgs::Odometry::ConstPtr& mess
       ROS_ERROR("transform for controller feedback: %s\n", ex.what()); //Print exception which was caught
       return;
     }
+    // We are in normal operation and want the positon to be in feedback frame and orientation in the pool frame
+    if (goal_frame == "pool") {
+        pose_out.pose.orientation = pose_in.pose.orientation;
+    }
 
     // Get the data out of the odometry message
     extract_6_DOF(pose_out, pos);    
