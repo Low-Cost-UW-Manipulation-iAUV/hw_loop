@@ -35,6 +35,76 @@ namespace UWEsub {
 
 phoenix_hw_interface::phoenix_hw_interface() {
     goal_frame = "pool";
+
+    // resize the callback data vector and reset it to 0;
+    callback_pos.resize(6,0.0);
+    // Initialize the callback pose...
+    callback_message.pose.pose.position.x = 0.0;
+    callback_message.pose.pose.position.y = 0.0;
+    callback_message.pose.pose.position.z = 0.0;
+
+    callback_message.pose.pose.orientation.x = 0.0;
+    callback_message.pose.pose.orientation.y = 0.0;
+    callback_message.pose.pose.orientation.z = 0.0;
+    callback_message.pose.pose.orientation.w = 1;
+
+    sequence = 0;
+    terminate_flag = false;
+    safe = false;
+    // set the pool origin = [0,0,0,0,0,0]
+    init_pool_origin();
+    /// get the parameters
+    get_allocation_matrix();
+    get_maximum_command();
+    get_linearisation_parameter();
+
+    /// Create a panic command line panic button that can be used like this: rosservice call stop
+    panic_stopper = nh_.advertiseService("/stop", &phoenix_hw_interface::panic, this);
+    if(panic_stopper) {
+        ROS_INFO("DOF_5_hw_loop: Panic button online");
+    } else {
+        ROS_ERROR("DOF_5_hw_loop: Panic Button not functioning");
+    }        
+
+    /// Advertise the I-SO transformer service:
+    set_iso_reference_service = nh_.advertiseService("/hw_loop/setIsoReference", &phoenix_hw_interface::setIsoReference, this);
+    // Initialise the URDF file that holds all the limits and load more params from parameterserver
+    get_controller_limits();
+    registerHandles();
+
+
+    /// Subscribe to the Feedback Signal using a tf::MessageFilter (not to be confused with message_filters...)
+    fused_pose_sub.subscribe(nh_, "/odometry/filtered", 10);
+    fused_pose_filter = new tf::MessageFilter<nav_msgs::Odometry>(fused_pose_sub, listener, "/feedback", 10);
+    fused_pose_filter->registerCallback(boost::bind(&phoenix_hw_interface::sub_callback, this, _1) );
+
+
+    ///Initialise the controller manager
+    ROS_INFO("DOF_5_hw_loop: Loading the controller manager");
+    controller_manager_.reset(new controller_manager::ControllerManager(this, nh_));
+
+    /// Set up the real time safe publisher
+    thruster_driver_command_publisher_.reset(new realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>(nh_, "motorVal", 1) );
+
+    /// Get the required variables from the parameter server and set standard values if not available
+    loop_hz_ = 0;
+    if (!nh_.getParam("/thruster_interface/update_rate", loop_hz_)) {
+
+        ROS_ERROR("DOF_5_hw_loop: Could not find update rate, assuming 50. \n");
+        loop_hz_ = 50;
+        nh_.setParam("thruster_interface/update_rate", loop_hz_);
+    }
+
+    /// Set up the control loop by creating a timer and a connected callback
+    ros::Duration update_freq = ros::Duration(1.0/loop_hz_);
+    timer_update = nh_.createTimer(update_freq, &phoenix_hw_interface::update, this);
+}
+
+/** Destructor: 
+*/
+phoenix_hw_interface::~phoenix_hw_interface() {}
+
+void phoenix_hw_interface::registerHandles(void ) {
     ///set the controller output to 0
     cmd.resize(6);
     cmd[0] = 0.0;
@@ -68,33 +138,6 @@ phoenix_hw_interface::phoenix_hw_interface() {
     eff[3] = 0.0;
     eff[4] = 0.0;
     eff[5] = 0.0;
-
-    // resize the callback data vector and reset it to 0;
-    callback_pos.resize(6,0.0);
-
-    sequence = 0;
-    terminate_flag = false;
-    safe = false;
-    // set the pool origin = [0,0,0,0,0,0]
-    init_pool_origin();
-
-    /// get the parameters
-    get_allocation_matrix();
-    get_maximum_command();
-    get_linearisation_parameter();
-
-    /// Create a panic command line panic button that can be used like this: rosservice call stop
-    panic_stopper = nh_.advertiseService("/stop", &phoenix_hw_interface::panic, this);
-    if(panic_stopper) {
-        ROS_INFO("DOF_5_hw_loop: Panic button online");
-    } else {
-        ROS_ERROR("DOF_5_hw_loop: Panic Button not functioning");
-    }        
-
-    /// Advertise the I-SO transformer service:
-    set_iso_reference_service = nh_.advertiseService("/hw_loop/setIsoReference", &phoenix_hw_interface::setIsoReference, this);
-    // Initialise the URDF file that holds all the limits and load more params from parameterserver
-    get_controller_limits();
 
     /// connect and register the joint state interface for the 6 DOF
     hardware_interface::JointStateHandle state_handle_x("x", &pos[0], &vel[0], &eff[0]);
@@ -159,38 +202,7 @@ phoenix_hw_interface::phoenix_hw_interface() {
     
     joint_limits_interface::EffortJointSoftLimitsHandle limit_handle_roll(pos_handle_roll, limits.at(5), soft_limits.at(5));
     jnt_limits_interface_.registerHandle(limit_handle_roll);
-
-
-    /// Subscribe to the Feedback Signal using a tf::MessageFilter (not to be confused with message_filters...)
-    fused_pose_sub.subscribe(nh_, "/odometry/filtered", 10);
-    fused_pose_filter = new tf::MessageFilter<nav_msgs::Odometry>(fused_pose_sub, listener, "/feedback", 10);
-    fused_pose_filter->registerCallback(boost::bind(&phoenix_hw_interface::sub_callback, this, _1) );
-
-
-    ///Initialise the controller manager
-    ROS_INFO("DOF_5_hw_loop: Loading the controller manager");
-    controller_manager_.reset(new controller_manager::ControllerManager(this, nh_));
-
-    /// Set up the real time safe publisher
-    thruster_driver_command_publisher_.reset(new realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>(nh_, "motorVal", 1) );
-
-    /// Get the required variables from the parameter server and set standard values if not available
-    loop_hz_ = 0;
-    if (!nh_.getParam("/thruster_interface/update_rate", loop_hz_)) {
-
-        ROS_ERROR("DOF_5_hw_loop: Could not find update rate, assuming 50. \n");
-        loop_hz_ = 50;
-        nh_.setParam("thruster_interface/update_rate", loop_hz_);
-    }
-
-    /// Set up the control loop by creating a timer and a connected callback
-    ros::Duration update_freq = ros::Duration(1.0/loop_hz_);
-    timer_update = nh_.createTimer(update_freq, &phoenix_hw_interface::update, this);
 }
-
-/** Destructor: 
-*/
-phoenix_hw_interface::~phoenix_hw_interface() {}
 
 int phoenix_hw_interface::get_controller_limits(void) {
 

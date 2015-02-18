@@ -76,11 +76,12 @@ namespace UWEsub {
         void sub_callback(const nav_msgs::Odometry::ConstPtr& );
         void transform_for_controller_feedback(void);
 
-        void extract_6_DOF(const geometry_msgs::PoseStamped& , ublas::vector<double>&);
 
 
     private:
+    void registerHandles(void);
 
+        void extract_6_DOF(const geometry_msgs::PoseStamped& , ublas::vector<double>&);
 
         /// virtual panic button
         ros::ServiceServer panic_stopper;
