@@ -390,7 +390,7 @@ void phoenix_hw_interface::init_pool_origin(void) {
 
 void phoenix_hw_interface::publish_feedback_frame(bool regular) {
     tf::Transform transform;
-    tf::Transforms found_transform;
+    tf::StampedTransform found_transform;
     // if we are just positioning in the pool
     if(regular == true) {
         // Find the angle between pool and base_link
