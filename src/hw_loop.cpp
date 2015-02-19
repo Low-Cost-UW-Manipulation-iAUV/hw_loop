@@ -334,7 +334,7 @@ void phoenix_hw_interface::sub_callback(const nav_msgs::Odometry::ConstPtr& mess
     pose_in.pose = callback_message.pose.pose;
 
     geometry_msgs::PoseStamped pose_out;
-    // find the subs pose in the pool frame
+    // find the subs pose in the pool frame and converts it into the feedback frame
     try {
         listener.waitForTransform(pose_in.header.frame_id, "/feedback", ros::Time(0), ros::Duration(0.07));
         listener.transformPose("/feedback", pose_in, pose_out);
@@ -343,6 +343,7 @@ void phoenix_hw_interface::sub_callback(const nav_msgs::Odometry::ConstPtr& mess
       return;
     }
     // We are in normal operation and want the positon to be in feedback frame and orientation in the pool frame
+    // Otherwise our heading would be RPY(0,0,0) all the time
     if (goal_frame == "pool") {
         pose_out.pose.orientation = pose_in.pose.orientation;
     }
@@ -389,14 +390,21 @@ void phoenix_hw_interface::init_pool_origin(void) {
 
 void phoenix_hw_interface::publish_feedback_frame(bool regular) {
     tf::Transform transform;
-
+    tf::Transforms found_transform;
     // if we are just positioning in the pool
     if(regular == true) {
-
-        // Use the pool corner as reference point (0,0,0)- for normal operation - aka don't transform the data at all. We are virtually still in the pool frame
+        // Find the angle between pool and base_link
+        try {
+            listener.waitForTransform("/pool", "/base_link", ros::Time(0), ros::Duration(0.07));
+            listener.lookupTransform("/pool", "/base_link", ros::Time(0), found_transform);
+        } catch (tf::TransformException &ex) {
+          ROS_ERROR("Publis feedback frame: %s\n", ex.what()); //Print exception which was caught
+          return;
+        }
+        // Use the pool corner as reference point (0,0,0)- for normal operation but rotate the frame by the submarines current heading;
 
         transform.setOrigin( tf::Vector3(Pool_Origin.pose.position.x,Pool_Origin.pose.position.y,Pool_Origin.pose.position.z) );
-        transform.setRotation(tf::Quaternion(Pool_Origin.pose.orientation.x,Pool_Origin.pose.orientation.y, Pool_Origin.pose.orientation.z, Pool_Origin.pose.orientation.w) );
+        transform.setRotation( found_transform.getRotation() );
 
         // Use the iso reference position set when calling the service
     } else {
