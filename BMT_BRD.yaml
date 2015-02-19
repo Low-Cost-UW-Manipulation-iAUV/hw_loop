@@ -94,7 +94,7 @@ Controller:  # parameters for the actual controller
     x:      {p: 0,  d: 0, i: 0, i_clamp: 1}
     y:      {p: 0,  d: 0, i: 0, i_clamp: 1}
     z:      {p: 0,  d: 0, i: 0, i_clamp: 1}
-    yaw:    {p: 400,  d: 100, i: 20, i_clamp: 0}
+    yaw:    {d: 742.1347900193108, i: 67456.66176733066, p: 8607.416240756198, i_clamp: 0}
     pitch:  {d: 5, i: 3, p: 40, i_clamp: 0}
     roll:   {p: 0,  d: 0, i: 0, i_clamp: 1}
 
