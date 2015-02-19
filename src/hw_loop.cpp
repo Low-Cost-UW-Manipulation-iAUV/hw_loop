@@ -388,30 +388,22 @@ void phoenix_hw_interface::init_pool_origin(void) {
 }
 
 void phoenix_hw_interface::publish_feedback_frame(bool regular) {
-    // Get the current transform from pool to base_link - current pose of sub in pool
-    tf::StampedTransform transform_found;
-    try {
-        listener.lookupTransform("/pool", "/base_link" , ros::Time(0), transform_found);        
-    } catch (tf::TransformException &ex) {
-      ROS_ERROR("Publish Feedback Frame%s",ex.what());
-      ros::Duration(1.0).sleep();        
-    }
-
-    // Publish a new transform from pool->feedback
     tf::Transform transform;
 
-    // Use the pool corner as reference point (0,0,0)- for normal operation
+    // if we are just positioning in the pool
     if(regular == true) {
+
+        // Use the pool corner as reference point (0,0,0)- for normal operation - aka don't transform the data at all. We are virtually still in the pool frame
+
         transform.setOrigin( tf::Vector3(Pool_Origin.pose.position.x,Pool_Origin.pose.position.y,Pool_Origin.pose.position.z) );
         transform.setRotation(tf::Quaternion(Pool_Origin.pose.orientation.x,Pool_Origin.pose.orientation.y, Pool_Origin.pose.orientation.z, Pool_Origin.pose.orientation.w) );
 
-    // Use the iso reference position set when calling the service
+        // Use the iso reference position set when calling the service
     } else {
         transform.setOrigin( tf::Vector3(iso_reference_pose.pose.position.x,iso_reference_pose.pose.position.y,iso_reference_pose.pose.position.z) );
         transform.setRotation(tf::Quaternion(iso_reference_pose.pose.orientation.x,iso_reference_pose.pose.orientation.y, iso_reference_pose.pose.orientation.z, iso_reference_pose.pose.orientation.w) );
 
     }
-    // use the rotation from pool->base_link for the rotation
 
     //broadcast it as the transform from pool to feedback
     bc_feedback.sendTransform( tf::StampedTransform(transform, ros::Time::now(), "/pool", "/feedback" ) );
@@ -450,15 +442,16 @@ void phoenix_hw_interface::update(const ros::TimerEvent& event) {
         // Joint Limits go here
         //jnt_limits_interface_.enforceLimits(elapsed_time_);
 
-        ROS_INFO("hw_loop - cmd: %f, %f, %f, %f, %f, %f", cmd[0],cmd[1],cmd[2],cmd[3],cmd[4], cmd[5]);
+        ROS_INFO("hw_loop - cmd: x:%f, y:%f, z:%f, yaw:%f, pitch:%f, roll:%f", cmd[0],cmd[1],cmd[2],cmd[3],cmd[4], cmd[5]);
         // find invidivdual thruster force demands from body frame force demands
         thruster_allocation();
+        ROS_INFO("hw_loop - thrust per thrusters: Surge: %f, Horizontal_rear: %f, Horizontal_front: %f, Vertical_rear: %f, Vertical_front: %f", thrust[0],thrust[1],thrust[2],thrust[3],thrust[4]);
 
-        ROS_INFO("hw_loop - write_cmd: %f, %f, %f, %f, %f", write_command[0],write_command[1],write_command[2],write_command[3],write_command[4]);
-        ROS_INFO("-----------------------");
         // calculate the thruster command from the force
         thrust_to_command();
 
+        ROS_INFO("hw_loop - linearized write_cmd to thrusters: Surge: %f, Horizontal_rear: %f, Horizontal_front: %f, Vertical_rear: %f, Vertical_front: %f", write_command[0],write_command[1],write_command[2],write_command[3],write_command[4]);
+        ROS_INFO("-----------------------");
         // scale forces down if thrusters are saturated
         scale_commands();
 

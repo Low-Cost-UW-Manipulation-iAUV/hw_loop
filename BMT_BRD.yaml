@@ -8,8 +8,8 @@ thruster_interface:  # parameters necessary for runing the hardware_loop
     1.0,  0.0,  0.0,  0.0,      0.0,      0.0,
     0.0,  0.5,  0.0,  0.6098,   0.0,      0.0,
     0.0,  0.5,  0.0,  -0.6098,  0.0,      0.0,
-    0.0,  0.0,  0.5,  0.0,      -0.7246,  0,
-    0.0,  0.0,  0.5,  0.0,      0.7246,   0]
+    0.0,  0.0,  0.5,  0.0,      0.7246,  0,
+    0.0,  0.0,  0.5,  0.0,      -0.7246,   0]
   linearisation:  # Based on Fossen's simplified model: tau=b*|force|*force
     positive: # The values correspond to thruster 1->5
       m: [6.729, 5.6306, 5.6306, 5.6306, 5.6306]
@@ -69,12 +69,12 @@ Controller:  # parameters for the actual controller
   stop_trajectory_duration: 0        # Override default
   type: "effort_controllers/JointTrajectoryController"
   joints:
-    - x
-    - y
-    - z
+#    - x
+#    - y
+#    - z
     - yaw
     - pitch
-    - roll
+#    - roll
   joints_with_limits:
     - x
     - y
@@ -91,11 +91,11 @@ Controller:  # parameters for the actual controller
 #    head_2_joint:
 #      goal: 0.01                     # Not enforced if unspecified
   gains: # Required because we're controlling an effort interface
-    x:      {p: 10,  d: 0, i: 0, i_clamp: 1}
-    y:      {p: 10,  d: 0, i: 0, i_clamp: 1}
-    z:      {p: 10,  d: 0, i: 0, i_clamp: 1}
-    yaw:    {p: 10,  d: 0, i: 0, i_clamp: 1}
-    pitch:  {p: 10,  d: 0, i: 0, i_clamp: 1}
-    roll:   {p: 10,  d: 0, i: 0, i_clamp: 1}
+    x:      {p: 0,  d: 0, i: 0, i_clamp: 1}
+    y:      {p: 0,  d: 0, i: 0, i_clamp: 1}
+    z:      {p: 0,  d: 0, i: 0, i_clamp: 1}
+    yaw:    {p: 400,  d: 100, i: 20, i_clamp: 0}
+    pitch:  {d: 5, i: 3, p: 40, i_clamp: 0}
+    roll:   {p: 0,  d: 0, i: 0, i_clamp: 1}
 
 
