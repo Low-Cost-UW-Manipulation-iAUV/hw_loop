@@ -448,7 +448,7 @@ void phoenix_hw_interface::update(const ros::TimerEvent& event) {
         controller_manager_->update(ros::Time::now(), elapsed_time_);
 
         // Joint Limits go here
-        //jnt_limits_interface_.enforceLimits(elapsed_time_);
+        jnt_limits_interface_.enforceLimits(elapsed_time_);
 
         ROS_INFO("hw_loop - cmd: x:%f, y:%f, z:%f, yaw:%f, pitch:%f, roll:%f", cmd[0],cmd[1],cmd[2],cmd[3],cmd[4], cmd[5]);
         // find invidivdual thruster force demands from body frame force demands
