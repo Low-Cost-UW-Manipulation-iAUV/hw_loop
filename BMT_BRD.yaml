@@ -94,8 +94,8 @@ Controller:  # parameters for the actual controller
 #      goal: 0.01                     # Not enforced if unspecified
   gains: # Required because we're controlling an effort interface
     x:      {p: 14,  d: 90, i: 1, i_clamp: 0.0}
-    y:      {p: 80,  d: 60, i: 2, i_clamp: 0.0}
-    z:      {p: 80,  d: 60, i: 2, i_clamp: 0.0}
+    y:      {p: 40,  d: 20, i: 0, i_clamp: 0.0}
+    z:      {p: 40,  d: 0, i: 0, i_clamp: 0.0}
     yaw:    {d: 280, i: 20, p: 300, i_clamp: 0.0}
     pitch:  {d: 180, i: 20, p: 300, i_clamp: 0.0}
     roll:   {p: 0,  d: 0, i: 0, i_clamp: 0.0}
