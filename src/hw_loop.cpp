@@ -222,7 +222,6 @@ int phoenix_hw_interface::get_controller_limits(void) {
     // Load all limits into:
     limits.resize(temp_joints.size());
     soft_limits.resize(temp_joints.size());
-
     int x = 0;
     for (std::vector<std::string>::iterator it = temp_joints.begin(); it != temp_joints.end(); ++it, x++) {
         
@@ -448,7 +447,7 @@ void phoenix_hw_interface::update(const ros::TimerEvent& event) {
         controller_manager_->update(ros::Time::now(), elapsed_time_);
 
         // Joint Limits go here
-        jnt_limits_interface_.enforceLimits(elapsed_time_);
+        //jnt_limits_interface_.enforceLimits(elapsed_time_);
 
         ROS_INFO("hw_loop - cmd: x:%f, y:%f, z:%f, yaw:%f, pitch:%f, roll:%f", cmd[0],cmd[1],cmd[2],cmd[3],cmd[4], cmd[5]);
         // find invidivdual thruster force demands from body frame force demands
@@ -458,11 +457,12 @@ void phoenix_hw_interface::update(const ros::TimerEvent& event) {
         // calculate the thruster command from the force
         thrust_to_command();
 
-        ROS_INFO("hw_loop - linearized write_cmd to thrusters: Surge: %f, Horizontal_rear: %f, Horizontal_front: %f, Vertical_rear: %f, Vertical_front: %f", write_command[0],write_command[1],write_command[2],write_command[3],write_command[4]);
-        ROS_INFO("-----------------------");
+
         // scale forces down if thrusters are saturated
         scale_commands();
-
+        ROS_INFO("hw_loop - linearized write_cmd to thrusters: Surge: %f, Horizontal_rear: %f, Horizontal_front: %f, Vertical_rear: %f, Vertical_front: %f", write_command[0],write_command[1],write_command[2],write_command[3],write_command[4]);
+        ROS_INFO("-----------------------");
+        
         // Write the new command to the motor drivers
         write();
     }
@@ -591,8 +591,13 @@ int phoenix_hw_interface::get_maximum_command(void) {
 */
 int phoenix_hw_interface::scale_commands(void) {
     double largest_command = 0;
+    std::vector<double> temp_largest;
     // find the largest command in the range
-    largest_command = *std::max_element(write_command.begin(), write_command.end());
+    temp_largest.push_back(*std::max_element(write_command.begin(), write_command.end()));
+    temp_largest.push_back(fabs(*std::min_element(write_command.begin(), write_command.end())) );
+
+    largest_command = *std::max_element(temp_largest.begin(), temp_largest.end());
+    ROS_INFO("largest_command is: %f", largest_command);
     // if that command saturates the thrusters scale down all commands.
     if (largest_command > max_command) {
         thrusters_scaled_down = true;
@@ -607,7 +612,7 @@ int phoenix_hw_interface::scale_commands(void) {
         for(int x = 0; x < write_command.size(); x++) {
             write_command[x] = write_command[x] * scale_down;
         }
-        ROS_INFO("hw_loop: scaling down commands");
+        ROS_ERROR("hw_loop: scaling down commands");
     } else {
         thrusters_scaled_down = false;
     }
